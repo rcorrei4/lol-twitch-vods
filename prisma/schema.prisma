@@ -1,0 +1,60 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Region {
+  NA
+  EUW
+  EUNE
+  KR
+  BR
+  OCE
+}
+
+model Streamer {
+  id               Int           @id @default(autoincrement())
+  twitchId         Int           @unique
+  twitchUsername   String
+  createdAt        DateTime      @default(now())
+  lolUsernames     String[]
+
+  participants     Participant[]
+}
+
+model Match {
+  id                    Int           @id @default(autoincrement())
+  matchId               Int           @unique
+  region                Region
+  gameDuration          Int
+  gameCreationDatetime  DateTime
+  gameStartDatetime     DateTime
+  gameEndDatetime       DateTime
+
+  participants          Participant[]
+  @@index([matchId])
+}
+
+model Participant {
+  id                    Int           @id @default(autoincrement())
+  championName          String
+  kills                 Int
+  deaths                Int
+  assists               Int
+  position              String
+
+  matchId               Int           
+  match                 Match         @relation(fields: [matchId], references: [id])
+  streamerId            Int?          
+  streamer              Streamer?     @relation(fields: [streamerId], references: [id])
+}
