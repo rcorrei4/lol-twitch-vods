@@ -1,12 +1,16 @@
+"use server";
+
+const CLIENT_ID = process.env.TWITCH_CLIENT_ID || "";
+const CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET || "";
+
 import {
   getTwitchAuthToken,
   insertTwitchAuthToken,
 } from "@/prisma/tokenRepository";
-import { NextRequest } from "next/server";
 
-async function getTwitchToken(client_id: string, client_secret: string) {
+async function getTwitchToken() {
   const response = await fetch(
-    `https://id.twitch.tv/oauth2/token?client_id=${client_id}&client_secret=${client_secret}&grant_type=client_credentials`,
+    `https://id.twitch.tv/oauth2/token?client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}&grant_type=client_credentials`,
     {
       method: "POST",
     }
@@ -30,16 +34,12 @@ async function getTwitchToken(client_id: string, client_secret: string) {
   }
 }
 
-async function searchStreamer(
-  username: string,
-  client_id: string,
-  twitchToken: string
-) {
+async function searchStreamer(username: string, twitchToken: string) {
   const result = await fetch(
     `https://api.twitch.tv/helix/search/channels?query=${username}`,
     {
       headers: {
-        "Client-Id": client_id,
+        "Client-Id": CLIENT_ID,
         Authorization: `Bearer ${twitchToken}`,
       },
     }
@@ -62,30 +62,25 @@ async function searchStreamer(
   }
 }
 
-export async function GET(request: NextRequest) {
-  const client_id = process.env.TWITCH_CLIENT_ID;
-  const client_secret = process.env.TWITCH_CLIENT_SECRET;
-
-  if (client_id === undefined || client_secret === undefined) {
+export async function getStreamerId(streamerUsername: string) {
+  if (CLIENT_ID === undefined || CLIENT_SECRET === undefined) {
     throw Error("Expected CLIENT_ID and CLIENT_SECRET env variables!");
   }
 
   let token = await getTwitchAuthToken();
 
   if (token === undefined) {
-    token = await getTwitchToken(client_id, client_secret);
+    token = await getTwitchToken();
   }
 
-  const streamerUsername = request.nextUrl.searchParams.get("username");
-
-  if (streamerUsername === null) {
+  if (streamerUsername === undefined) {
     throw Error("Missing streamer username!");
   }
 
   try {
-    const result = await searchStreamer(streamerUsername, client_id, token);
+    const result = await searchStreamer(streamerUsername, token);
 
-    return Response.json({ data: result });
+    return result;
   } catch (error) {
     console.log(error);
   }

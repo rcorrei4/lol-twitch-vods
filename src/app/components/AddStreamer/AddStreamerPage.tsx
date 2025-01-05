@@ -1,28 +1,134 @@
 "use client";
 
+import getLolAccountPuuid from "@/app/actions/getLolAccountPuuid";
+import { getStreamerId } from "@/app/actions/getStreamerId";
+import updateOrCreateStreamer from "@/app/actions/upsertStreamer";
+import { UpsertStreamerDTO } from "@/prisma/streamerRepository";
 import { useState } from "react";
+import { useFieldArray, useForm } from "react-hook-form";
 import { Button } from "../Button/Button";
 
+type LolAccount = {
+  username: string;
+  tag: string;
+  puuid: string;
+};
+
+type AddStreamerForm = Omit<UpsertStreamerDTO, "lolAccounts"> & {
+  lolAccounts: LolAccount[];
+};
+
 export default function AddStreamerPage() {
-  const [streamerUsername, setStreamerUsername] = useState("");
   const [inputErrorMessage, setInputErrorMessage] = useState("");
+  const [lolUsername, setLolUsername] = useState("");
+  const [lolTag, setLolTag] = useState("");
   const [loading, setLoading] = useState(false);
   const [stepTwo, setStepTwo] = useState(false);
 
-  async function fetchStreamerId(streamerUsername: string) {
-    setInputErrorMessage("");
-    setLoading(true);
-    const response = await fetch(
-      `/api/twitch/get-streamer-id?username=${streamerUsername}`
-    );
-    const responseData = await response.json();
+  const {
+    register,
+    getValues,
+    setValue,
+    control,
+    formState: { errors },
+    trigger,
+    setError,
+    handleSubmit,
+    clearErrors,
+  } = useForm<AddStreamerForm>();
+  const lolAccounts = useFieldArray({
+    control,
+    name: "lolAccounts",
+  });
 
-    if (!responseData.data) {
-      setInputErrorMessage("Streamer not found!");
+  async function fetchStreamerId() {
+    setLoading(true);
+    await trigger("twitchUsername");
+
+    if (errors.twitchUsername) {
+      setLoading(false);
+      return;
+    }
+    const twitchUsername = getValues("twitchUsername");
+
+    const streamer = await getStreamerId(twitchUsername);
+
+    if (!streamer) {
+      setError("twitchUsername", {
+        type: "validate",
+        message: "Invalid streamer!",
+      });
+      setLoading(false);
+      return;
     }
 
-    setStepTwo(true);
+    setValue("twitchId", streamer["id"]);
+
     setLoading(false);
+    setStepTwo(true);
+  }
+
+  async function fetchLolAccount() {
+    setLoading(true);
+    clearErrors("lolAccounts");
+
+    const accountExists = lolAccounts.fields.some(
+      (lolAccount) =>
+        lolAccount.username.toLowerCase() === lolUsername.toLowerCase() &&
+        lolAccount.tag.toLowerCase() === lolTag.toLowerCase()
+    );
+
+    if (accountExists) {
+      setLoading(false);
+      return;
+    }
+
+    if (!lolUsername) {
+      setError("lolAccounts", {
+        type: "required",
+        message: "LoL Username is required!",
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (!lolTag) {
+      setError("lolAccounts", {
+        type: "required",
+        message: "Tag is required!",
+      });
+
+      setLoading(false);
+      return;
+    }
+
+    const data = await getLolAccountPuuid(lolUsername, lolTag);
+
+    if (data["message"]) {
+      setError("lolAccounts", {
+        type: "custom",
+        message: data["message"],
+      });
+      setLoading(false);
+      return;
+    }
+
+    lolAccounts.append({
+      username: data["gameName"],
+      tag: data["tagLine"],
+      puuid: data["puuid"],
+    });
+    setLoading(false);
+  }
+
+  async function handleSubmitForm(data: AddStreamerForm) {
+    await updateOrCreateStreamer({
+      twitchId: data.twitchId,
+      twitchUsername: data.twitchUsername,
+      lolAccounts: data.lolAccounts.map((lolAccount) => {
+        return lolAccount.puuid;
+      }),
+    });
   }
 
   return (
@@ -30,38 +136,42 @@ export default function AddStreamerPage() {
       <h1 className="mt-5 text-3xl text-center sm:text-5xl">
         Add new streamer
       </h1>
-      <form className="flex flex-col justify-center gap-5">
-        <div className="flex flex-col gap-3 bg-gray-two p-5 rounded">
+      <form
+        className="flex flex-col justify-center gap-5"
+        onSubmit={handleSubmit(handleSubmitForm)}
+      >
+        <div className="flex flex-col gap-3 border border-gray-two p-5 rounded">
           <input
-            className="h-[40px] text-[14px] w-full outline-none bg-gray-three px-3 py-1 rounded-[5px] border border-gray-three 
+            className="h-[40px] text-[14px] w-full outline-none bg-gray-two px-3 py-1 rounded-[5px] border border-gray-three
             focus:ring-1 focus:ring-gray-three focus:ring-offset-1 focus:ring-offset-gray-two transition-all duration-400 ease-in-out
-            disabled:opacity-30"
-            name="text"
+            disabled:opacity-30 border-opacity-5"
             type="text"
             placeholder="Twitch account"
-            onChange={(e) => {
-              setStreamerUsername(e.target.value);
-            }}
             disabled={stepTwo ? true : false}
+            {...register("twitchUsername", { required: "Invalid streamer!" })}
           />
           <div
             className={`overflow-hidden transition-all duration-500 ease-in-out ${
-              inputErrorMessage ? "max-h-20 opacity-100" : "max-h-0 opacity-0"
+              errors.twitchUsername
+                ? "max-h-20 opacity-100"
+                : "max-h-0 opacity-0"
             }`}
           >
-            <p className="text-sm text-red-400">{inputErrorMessage}</p>
+            <p className="text-sm text-red-400">
+              {errors.twitchUsername?.message}
+            </p>
           </div>
           <Button
             accentColor={"secondary"}
-            onClick={() => fetchStreamerId(streamerUsername)}
-            loading={loading}
+            onClick={fetchStreamerId}
+            loading={!stepTwo && loading}
             disabled={stepTwo ? true : false}
           >
             Next
           </Button>
         </div>
         <div className="flex flex-col items-center justify-center -my-5">
-          <span className="flex justify-center items-center w-5 h-5 border-gray-three border-2 rounded-full">
+          <span className="flex justify-center items-center w-5 h-5 border-gray-two border-2 rounded-full">
             <span
               className={`flex w-4 h-4 rounded-full bg-primary transition-all duration-500 ease-in-out ${
                 stepTwo ? "opacity-0" : "opacity-100"
@@ -70,7 +180,7 @@ export default function AddStreamerPage() {
           </span>
 
           <div className="h-[25px] w-[2px] bg-gray-three"></div>
-          <span className="flex justify-center items-center w-5 h-5 border-gray-three border-2 rounded-full">
+          <span className="flex justify-center items-center w-5 h-5 border-gray-two border-2 rounded-full">
             <span
               className={`flex w-4 h-4 rounded-full bg-primary transition-all duration-500 ease-in-out ${
                 stepTwo ? "opacity-100" : "opacity-0"
@@ -78,56 +188,79 @@ export default function AddStreamerPage() {
             ></span>
           </span>
         </div>
-        <div className="bg-gray-two p-5 rounded">
-          <div className="grid grid-cols-3 gap-2">
+        <div className="border border-gray-two p-5 rounded">
+          <div className="grid grid-cols-5 gap-3">
             <input
-              className="mb-5 h-[40px] text-[14px] placeholder-gray-six flex-1 outline-none bg-gray-three 
-              px-3 py-1 rounded-[5px] border border-gray-three focus:ring-1 focus:ring-gray-three focus:ring-offset-1 
+              className="col-span-3 h-[40px] text-[14px] placeholder-gray-six flex-1 outline-none bg-gray-two 
+              px-3 py-1 rounded-[5px] border border-gray-three border-opacity-5 focus:ring-1 focus:ring-gray-three focus:ring-offset-1 
               focus:ring-offset-gray-two transition-all duration-400 ease-in-out disabled:opacity-30"
-              name="username"
               type="text"
+              onChange={(e) => {
+                setLolUsername(e.target.value);
+              }}
+              value={lolUsername}
               placeholder="LOL Username"
               disabled={stepTwo ? false : true}
+              maxLength={16}
             />
             <input
-              className="mb-5 h-[40px] text-[14px] flex-1 outline-none bg-gray-three  px-3 py-1 rounded-[5px] 
-              border border-gray-three focus:ring-1 focus:ring-gray-three focus:ring-offset-1 focus:ring-offset-gray-two 
+              className="col-span-2 h-[40px] text-[14px] flex-1 outline-none bg-gray-two px-3 py-1 rounded-[5px] 
+              border border-gray-two focus:ring-1 focus:ring-gray-three focus:ring-offset-1 focus:ring-offset-gray-two 
               transition-all duration-400 ease-in-out disabled:opacity-30"
-              name="tag"
               type="text"
+              onChange={(e) => {
+                setLolTag(e.target.value);
+              }}
+              value={lolTag}
               placeholder="TAG"
               disabled={stepTwo ? false : true}
+              maxLength={4}
             />
-            <select
-              className="mb-5 h-[40px] text-[14px] flex-1 outline-none bg-gray-three  px-3 py-1 rounded-[5px] border 
-              border-gray-three focus:ring-1 focus:ring-gray-three focus:ring-offset-1 focus:ring-offset-gray-two 
-              transition-all duration-400 ease-in-out appearance-none disabled:opacity-30"
-              name="servers"
-              id="servers"
-              style={{
-                backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='white' d='M10 12l-4-4h8l-4 4z'/%3E%3C/svg%3E")`,
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: "right 0.75rem center",
-                backgroundSize: "1rem",
-              }}
-              disabled={stepTwo ? false : true}
+            <div
+              className={`col-span-full transition-all duration-500 ease-in-out ${
+                errors.lolAccounts
+                  ? "max-h-20 opacity-100"
+                  : "max-h-0 opacity-0"
+              }`}
             >
-              <option value="br">BR</option>
-              <option value="eune">EUNE</option>
-              <option value="euw">EUW</option>
-              <option value="jp">JP</option>
-              <option value="kr">KR</option>
-              <option value="lan">LAN</option>
-              <option value="las">LAS</option>
-              <option value="na">NA</option>
-              <option value="oce">OCE</option>
-              <option value="tr">TR</option>
-              <option value="me">ME</option>
-              <option value="ru">RU</option>
-            </select>
+              <p className="text-sm text-red-400">
+                {errors.lolAccounts?.message}
+              </p>
+            </div>
+            <Button
+              className="h-[40px] col-span-full "
+              accentColor={"secondary"}
+              onClick={fetchLolAccount}
+              disabled={stepTwo ? false : true}
+              loading={stepTwo && loading}
+            >
+              Add
+            </Button>
+            <div className="col-span-full">
+              <ul className="flex flex-wrap gap-2 ">
+                {lolAccounts.fields.map((item, index) => (
+                  <li
+                    key={item.id}
+                    className="flex gap-2 items-center justify-center bg-gray-five px-4 py-[2px] rounded-full"
+                  >
+                    <span>
+                      {item.username}#{item.tag}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => lolAccounts.remove(index)}
+                      className="text-red-500 hover:text-red-700 transition-colors duration-300"
+                    >
+                      X
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
 
           <Button
+            className="mt-5"
             accentColor={"secondary"}
             onClick={() => setStepTwo(false)}
             disabled={stepTwo ? false : true}

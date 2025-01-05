@@ -13,13 +13,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Region {
-  NA
-  EUW
-  EUNE
-  KR
-  BR
-  OCE
+enum Server {
+  br
+  eune
+  euw
+  jp
+  kr
+  lan
+  las
+  na
+  oce
+  tr
+  me
+  ru
 }
 
 model Token {
@@ -29,11 +35,11 @@ model Token {
 }
 
 model Streamer {
-  id               Int           @id @default(autoincrement())
-  twitchId         Int           @unique
-  twitchUsername   String
-  createdAt        DateTime      @default(now())
-  lolUsernames     String[]
+  id                 Int           @id @default(autoincrement())
+  twitchId           String           @unique
+  twitchUsername     String
+  createdAt          DateTime      @default(now())
+  lolAccounts        String[]
 
   participants     Participant[]
 }
@@ -41,7 +47,7 @@ model Streamer {
 model Match {
   id                    Int           @id @default(autoincrement())
   matchId               Int           @unique
-  region                Region
+  region                Server
   gameDuration          Int
   gameCreationDatetime  DateTime
   gameStartDatetime     DateTime
