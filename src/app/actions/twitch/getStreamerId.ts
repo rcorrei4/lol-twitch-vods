@@ -1,38 +1,9 @@
 "use server";
 
+import { getTwitchAuthToken } from "./getTwitchToken";
+
 const CLIENT_ID = process.env.TWITCH_CLIENT_ID || "";
 const CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET || "";
-
-import {
-  getTwitchAuthToken,
-  insertTwitchAuthToken,
-} from "@/prisma/tokenRepository";
-
-async function getTwitchToken() {
-  const response = await fetch(
-    `https://id.twitch.tv/oauth2/token?client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}&grant_type=client_credentials`,
-    {
-      method: "POST",
-    }
-  );
-
-  if (response.ok) {
-    const data = await response.json();
-    const acess_token: string = data.access_token;
-
-    if (acess_token !== undefined) {
-      await insertTwitchAuthToken(data.access_token);
-
-      return acess_token;
-    }
-
-    throw Error("Error while fetching twitch token!");
-  } else {
-    throw new Error(
-      `Failed to fetch token: ${response.status} ${response.statusText}`
-    );
-  }
-}
 
 async function searchStreamer(username: string, twitchToken: string) {
   const result = await fetch(
@@ -47,16 +18,17 @@ async function searchStreamer(username: string, twitchToken: string) {
 
   if (result.ok) {
     const responseData = await result.json();
+
     let streamer = responseData.data?.find(
       (item: any) =>
-        item?.broadcaster_login && item.broadcaster_login === username
+        (item?.broadcaster_login &&
+          item.broadcaster_login.toLowerCase() === username.toLowerCase()) ||
+        Object.values(item).some(
+          (value) =>
+            typeof value === "string" &&
+            value.toLowerCase() === username.toLowerCase()
+        )
     );
-
-    if (!streamer) {
-      streamer = responseData.data?.find((item: any) =>
-        Object.values(item).some((value) => value === username)
-      );
-    }
 
     return streamer;
   }
@@ -68,10 +40,6 @@ export async function getStreamerId(streamerUsername: string) {
   }
 
   let token = await getTwitchAuthToken();
-
-  if (token === undefined) {
-    token = await getTwitchToken();
-  }
 
   if (streamerUsername === undefined) {
     throw Error("Missing streamer username!");

@@ -35,10 +35,12 @@ model Token {
 }
 
 model Streamer {
-  id                 Int           @id @default(autoincrement())
+  id                 Int              @id @default(autoincrement())
   twitchId           String           @unique
-  twitchUsername     String
-  createdAt          DateTime      @default(now())
+  displayName        String
+  login              String
+  profileImage       String
+  createdAt          DateTime         @default(now())
   lolAccounts        String[]
 
   participants     Participant[]

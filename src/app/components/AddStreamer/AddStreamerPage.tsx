@@ -1,9 +1,10 @@
 "use client";
 
 import getLolAccountPuuid from "@/app/actions/getLolAccountPuuid";
-import { getStreamerId } from "@/app/actions/getStreamerId";
-import updateOrCreateStreamer from "@/app/actions/upsertStreamer";
-import { UpsertStreamerDTO } from "@/prisma/streamerRepository";
+import { getStreamerId } from "@/app/actions/twitch/getStreamerId";
+import updateOrCreateStreamer, {
+  UpsertStreamerDTO,
+} from "@/app/actions/upsertStreamer";
 import { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { Button } from "../Button/Button";
@@ -15,11 +16,11 @@ type LolAccount = {
 };
 
 type AddStreamerForm = Omit<UpsertStreamerDTO, "lolAccounts"> & {
+  streamerSearchQuery: string;
   lolAccounts: LolAccount[];
 };
 
 export default function AddStreamerPage() {
-  const [inputErrorMessage, setInputErrorMessage] = useState("");
   const [lolUsername, setLolUsername] = useState("");
   const [lolTag, setLolTag] = useState("");
   const [loading, setLoading] = useState(false);
@@ -43,18 +44,18 @@ export default function AddStreamerPage() {
 
   async function fetchStreamerId() {
     setLoading(true);
-    await trigger("twitchUsername");
+    await trigger("streamerSearchQuery");
 
-    if (errors.twitchUsername) {
+    if (errors.streamerSearchQuery) {
       setLoading(false);
       return;
     }
-    const twitchUsername = getValues("twitchUsername");
 
-    const streamer = await getStreamerId(twitchUsername);
+    const streamerSearchQuery = getValues("streamerSearchQuery");
+    const streamer = await getStreamerId(streamerSearchQuery);
 
     if (!streamer) {
-      setError("twitchUsername", {
+      setError("streamerSearchQuery", {
         type: "validate",
         message: "Invalid streamer!",
       });
@@ -62,7 +63,12 @@ export default function AddStreamerPage() {
       return;
     }
 
+    console.log(streamer);
+
     setValue("twitchId", streamer["id"]);
+    setValue("displayName", streamer["display_name"]);
+    setValue("profileImage", streamer["thumbnail_url"]);
+    setValue("login", streamer["broadcaster_login"]);
 
     setLoading(false);
     setStepTwo(true);
@@ -124,7 +130,9 @@ export default function AddStreamerPage() {
   async function handleSubmitForm(data: AddStreamerForm) {
     await updateOrCreateStreamer({
       twitchId: data.twitchId,
-      twitchUsername: data.twitchUsername,
+      displayName: data.displayName,
+      login: data.login,
+      profileImage: data.profileImage,
       lolAccounts: data.lolAccounts.map((lolAccount) => {
         return lolAccount.puuid;
       }),
@@ -148,17 +156,19 @@ export default function AddStreamerPage() {
             type="text"
             placeholder="Twitch account"
             disabled={stepTwo ? true : false}
-            {...register("twitchUsername", { required: "Invalid streamer!" })}
+            {...register("streamerSearchQuery", {
+              required: "Invalid streamer!",
+            })}
           />
           <div
             className={`overflow-hidden transition-all duration-500 ease-in-out ${
-              errors.twitchUsername
+              errors.streamerSearchQuery
                 ? "max-h-20 opacity-100"
                 : "max-h-0 opacity-0"
             }`}
           >
             <p className="text-sm text-red-400">
-              {errors.twitchUsername?.message}
+              {errors.streamerSearchQuery?.message}
             </p>
           </div>
           <Button

@@ -1,33 +1,49 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import SelectChampions from "../SelectChampions/SelectChampions";
+import Gallery, { GalleryElement } from "../Gallery/Gallery";
 
 type TabsProps = {
-  championsImages: string[];
+  champions: GalleryElement[];
+  streamers: GalleryElement[];
 };
 
-export default function Tabs({ championsImages }: TabsProps) {
+export default function Tabs({ champions, streamers }: TabsProps) {
   const tabs = [
     {
       id: 1,
       title: "Streamer",
       render: () => {
-        return <div>Streamers</div>;
+        return (
+          <Gallery
+            id={"streamers-1"}
+            type="streamers"
+            elements={streamers}
+            showLabels={true}
+          />
+        );
       },
     },
     {
       id: 2,
       title: "Champion",
       render: () => {
-        return <SelectChampions championsImages={championsImages} />;
+        return (
+          <Gallery id={"champions-1"} type="champions" elements={champions} />
+        );
       },
     },
     {
       id: 3,
       title: "Enemy",
       render: () => {
-        return <SelectChampions championsImages={championsImages} />;
+        return (
+          <Gallery
+            id={"champions-2"}
+            type="enemyChampions"
+            elements={champions}
+          />
+        );
       },
     },
   ];
@@ -72,7 +88,7 @@ export default function Tabs({ championsImages }: TabsProps) {
           style={tabStyle}
         ></div>
       </div>
-      <form className="mt-5 px-5 w-full">
+      <div className="mt-5 px-5 w-full">
         {tabs.map((tab) => (
           <div
             key={tab.id}
@@ -81,7 +97,7 @@ export default function Tabs({ championsImages }: TabsProps) {
             {tab.render()}
           </div>
         ))}
-      </form>
+      </div>
     </div>
   );
 }
