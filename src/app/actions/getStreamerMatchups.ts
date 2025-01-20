@@ -1,17 +1,40 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { Position } from "@prisma/client";
 import { getTwitchAuthToken } from "./twitch/getTwitchToken";
 
 const CLIENT_ID = process.env.TWITCH_CLIENT_ID || "";
 const RIOT_GAMES_API_KEY = process.env.RIOT_GAMES_API_KEY;
 
-async function getStreamerAccountMatches(
+type Participant = {
+  championName: string;
+  kills: number;
+  deaths: number;
+  assists: number;
+  teamPosition: string;
+  win: boolean;
+  puuid: string;
+  vodUrl?: string;
+};
+
+type MatchInfo = {
+  gameStartTimestamp: number;
+  gameEndTimestamp: number;
+  gameId: number;
+  participants: Participant[];
+};
+
+type Match = {
+  info: MatchInfo;
+};
+
+async function listStreamerAccountMatches(
   accountPuuid: string,
   endTime: number
 ) {
   const response = await fetch(
-    `https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/${accountPuuid}/ids?api_key=${RIOT_GAMES_API_KEY}&endTime=${endTime}&count=20`
+    `https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/${accountPuuid}/ids?api_key=${RIOT_GAMES_API_KEY}&endTime=${endTime}&count=100`
   );
 
   if (response.ok) {
@@ -20,7 +43,7 @@ async function getStreamerAccountMatches(
   }
 }
 
-async function getStreamerVods(streamerId: string) {
+async function listStreamerVods(streamerId: string) {
   let token = await getTwitchAuthToken();
 
   const request = await fetch(
@@ -39,15 +62,35 @@ async function getStreamerVods(streamerId: string) {
   }
 }
 
-async function getMatch(matchId: string) {
+async function getMatch(matchId: string): Promise<Match | null> {
   const response = await fetch(
     `https://americas.api.riotgames.com/lol/match/v5/matches/${matchId}?api_key=${RIOT_GAMES_API_KEY}`
   );
 
-  if (response.ok) {
-    const data = await response.json();
-    return data;
+  if (!response.ok) {
+    console.error(`Failed to fetch match data for matchId=${matchId}`);
+    return null;
   }
+
+  const data = await response.json();
+  const match: Match = {
+    info: {
+      gameStartTimestamp: data.info.gameStartTimestamp,
+      gameEndTimestamp: data.info.gameEndTimestamp,
+      gameId: data.info.gameId,
+      participants: data.info.participants.map((participant: any) => ({
+        championName: participant.championName,
+        kills: participant.kills,
+        deaths: participant.deaths,
+        assists: participant.assists,
+        teamPosition: participant.teamPosition as Position,
+        win: participant.win,
+        puuid: participant.puuid,
+      })),
+    },
+  };
+
+  return match;
 }
 
 function getVodEndDateTime(vodStart: Date, duration: string) {
@@ -69,40 +112,120 @@ function getVodEndDateTime(vodStart: Date, duration: string) {
   return vodEnd;
 }
 
-async function getMatchupVod(matchId: string, streamerVods: any[]) {
+async function getMatchupVod(
+  matchId: string,
+  streamerVods: any[],
+  streamerLolAccounts: string[]
+) {
   const match = await getMatch(matchId);
+
+  if (match === null) {
+    console.error("Error while getting streamer match id=", matchId);
+    return null;
+  }
+
+  const streamerParticipant = match.info.participants.find((participant) =>
+    streamerLolAccounts.includes(participant.puuid)
+  );
+
+  if (!streamerParticipant) {
+    console.error("No matching participant found for match id=", matchId);
+    return null;
+  }
 
   for (const vod of streamerVods) {
     const vodStart = new Date(vod.created_at);
-
     const vodEnd = getVodEndDateTime(vodStart, vod.duration);
-    const matchStart = new Date(
-      parseInt(match["info"].gameStartTimestamp as string)
-    );
-    const matchEnd = new Date(
-      parseInt(match["info"].gameEndTimestamp as string)
-    );
+    const matchStart = new Date(match.info.gameStartTimestamp);
+    const matchEnd = new Date(match.info.gameEndTimestamp);
 
     if (
       (vodStart <= matchStart && matchStart <= vodEnd) ||
       (vodStart <= matchEnd && matchEnd <= vodEnd)
     ) {
+      let vodUrl: string;
       if (vodStart > matchStart) {
-        return `${vod.url}?t=00h00h`;
+        vodUrl = `${vod.url}?t=00h00m`;
+      } else {
+        const vodMatchStart = Math.abs(
+          vodStart.getTime() - matchStart.getTime()
+        );
+        const hours = Math.floor(vodMatchStart / (1000 * 60 * 60));
+        const minutes = Math.floor(
+          (vodMatchStart % (1000 * 60 * 60)) / (1000 * 60)
+        );
+        const seconds = Math.floor((vodMatchStart % (1000 * 60)) / 1000);
+        vodUrl = `${vod.url}?t=${hours}h${minutes}m${seconds}s`;
       }
 
-      const vodMatchStart = Math.abs(vodStart.getTime() - matchStart.getTime());
-      const hours = Math.floor(vodMatchStart / (1000 * 60 * 60));
-      const minutes = Math.floor(
-        (vodMatchStart % (1000 * 60 * 60)) / (1000 * 60)
-      );
-      const seconds = Math.floor((vodMatchStart % (1000 * 60)) / 1000);
-      return `${vod.url}?t=${hours}h${minutes}m${seconds}s`;
+      streamerParticipant.vodUrl = vodUrl;
+      return match;
     }
+  }
+
+  return null;
+}
+
+async function upsertStreamerMatchWithVod(
+  match: Match,
+  streamerLolAccounts: string[]
+) {
+  try {
+    const existingMatch = await prisma.match.findUnique({
+      where: { id: BigInt(match.info.gameId) },
+      include: { participants: true },
+    });
+
+    if (!existingMatch) {
+      console.log("Inserting new match...");
+      await prisma.match.create({
+        data: {
+          id: BigInt(match.info.gameId),
+          gameStartDatetime: new Date(match.info.gameStartTimestamp),
+          gameEndDatetime: new Date(match.info.gameEndTimestamp),
+          participants: {
+            create: match.info.participants.map((participant) => ({
+              puuid: participant.puuid,
+              championName: participant.championName,
+              kills: participant.kills,
+              deaths: participant.deaths,
+              assists: participant.assists,
+              position: participant.teamPosition as any,
+              win: participant.win,
+              vodUrl: participant.vodUrl ?? "",
+            })),
+          },
+        },
+      });
+
+      console.log(`Inserted new match ${match.info.gameId} with participants.`);
+      return;
+    }
+
+    const streamerParticipant = existingMatch.participants.find((participant) =>
+      streamerLolAccounts.includes(participant.puuid)
+    );
+
+    if (streamerParticipant) {
+      console.log("Updating existing match...");
+      await prisma.participant.update({
+        where: {
+          puuid_matchId: {
+            puuid: streamerParticipant.puuid,
+            matchId: match.info.gameId,
+          },
+        },
+        data: { vodUrl: streamerParticipant.vodUrl },
+      });
+
+      console.log(`Updated VOD URL for streamer ${streamerParticipant.puuid}`);
+    }
+  } catch (error) {
+    console.error(`Error upserting match ${match.info.gameId}:`, error);
   }
 }
 
-export async function getStreamerMatchupsVods(id: number) {
+export async function createStreamerMatchupsVods(id: number) {
   const streamer = await prisma.streamer.findUnique({
     where: {
       id: id,
@@ -110,10 +233,10 @@ export async function getStreamerMatchupsVods(id: number) {
   });
 
   if (streamer === null) {
-    return [];
+    return;
   }
 
-  const streamerVods = await getStreamerVods(streamer.twitchId);
+  const streamerVods = await listStreamerVods(streamer.twitchId);
   const firstVodStartTime = new Date(streamerVods[0].created_at);
 
   const lastVodEndTime = getVodEndDateTime(
@@ -124,20 +247,25 @@ export async function getStreamerMatchupsVods(id: number) {
   const streamerAccountMatches: [] = [];
 
   for (const streamerAccount of streamer.lolAccounts) {
-    const accountMatches: [] = await getStreamerAccountMatches(
+    const accountMatches: [] = await listStreamerAccountMatches(
       streamerAccount,
       lastVodEndTime.getTime()
     );
     streamerAccountMatches.push(...accountMatches);
   }
 
-  const vodMatchups: string[] = [];
   for (const streamerAccountMatch of streamerAccountMatches) {
-    const vodMatchup = await getMatchupVod(streamerAccountMatch, streamerVods);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    const vodMatchup = await getMatchupVod(
+      streamerAccountMatch,
+      streamerVods,
+      streamer.lolAccounts
+    );
     if (vodMatchup) {
-      vodMatchups.push(vodMatchup);
+      await upsertStreamerMatchWithVod(vodMatchup, streamer.lolAccounts);
     }
   }
 
-  console.log(vodMatchups);
+  console.log("Finished");
 }

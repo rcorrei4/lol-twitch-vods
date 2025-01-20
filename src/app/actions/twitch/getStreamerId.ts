@@ -6,6 +6,7 @@ const CLIENT_ID = process.env.TWITCH_CLIENT_ID || "";
 const CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET || "";
 
 async function searchStreamer(username: string, twitchToken: string) {
+  console.log(`Searching streamer by username: ${username}...`);
   const result = await fetch(
     `https://api.twitch.tv/helix/search/channels?query=${username}`,
     {

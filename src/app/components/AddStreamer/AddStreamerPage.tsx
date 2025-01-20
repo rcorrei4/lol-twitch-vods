@@ -63,8 +63,6 @@ export default function AddStreamerPage() {
       return;
     }
 
-    console.log(streamer);
-
     setValue("twitchId", streamer["id"]);
     setValue("displayName", streamer["display_name"]);
     setValue("profileImage", streamer["thumbnail_url"]);
