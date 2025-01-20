@@ -34,7 +34,7 @@ async function listStreamerAccountMatches(
   endTime: number
 ) {
   const response = await fetch(
-    `https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/${accountPuuid}/ids?api_key=${RIOT_GAMES_API_KEY}&endTime=${endTime}&count=100`
+    `https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/${accountPuuid}/ids?api_key=${RIOT_GAMES_API_KEY}&endTime=${endTime}&count=5`
   );
 
   if (response.ok) {
@@ -202,7 +202,7 @@ async function upsertStreamerMatchWithVod(
       return;
     }
 
-    const streamerParticipant = existingMatch.participants.find((participant) =>
+    const streamerParticipant = match.info.participants.find((participant) =>
       streamerLolAccounts.includes(participant.puuid)
     );
 
