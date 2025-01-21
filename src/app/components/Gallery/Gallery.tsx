@@ -42,7 +42,6 @@ export default function Gallery({
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (selectedElements.length > 0) {
-      console.log(selectedElements);
       params.set(type, selectedElements.join(","));
     } else {
       params.delete(type);

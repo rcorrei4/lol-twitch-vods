@@ -15,5 +15,7 @@ export default async function Results({ searchParams }: ResultsProps) {
     enemyChampions?.split(",")
   );
 
+  console.log(results);
+
   return <></>;
 }
