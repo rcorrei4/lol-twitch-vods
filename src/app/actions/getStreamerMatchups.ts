@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { Position } from "@prisma/client";
+import { Position, Streamer } from "@prisma/client";
 import { getTwitchAuthToken } from "./twitch/getTwitchToken";
 
 const CLIENT_ID = process.env.TWITCH_CLIENT_ID || "";
@@ -34,7 +34,7 @@ async function listStreamerAccountMatches(
   endTime: number
 ) {
   const response = await fetch(
-    `https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/${accountPuuid}/ids?api_key=${RIOT_GAMES_API_KEY}&endTime=${endTime}&count=5`
+    `https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/${accountPuuid}/ids?api_key=${RIOT_GAMES_API_KEY}&endTime=${endTime}&count=50`
   );
 
   if (response.ok) {
@@ -166,10 +166,7 @@ async function getMatchupVod(
   return null;
 }
 
-async function upsertStreamerMatchWithVod(
-  match: Match,
-  streamerLolAccounts: string[]
-) {
+async function upsertStreamerMatchWithVod(match: Match, streamer: Streamer) {
   try {
     const existingMatch = await prisma.match.findUnique({
       where: { id: BigInt(match.info.gameId) },
@@ -193,6 +190,13 @@ async function upsertStreamerMatchWithVod(
               position: participant.teamPosition as any,
               win: participant.win,
               vodUrl: participant.vodUrl ?? "",
+              streamer: participant.vodUrl
+                ? {
+                    connect: {
+                      id: streamer.id,
+                    },
+                  }
+                : undefined,
             })),
           },
         },
@@ -203,7 +207,7 @@ async function upsertStreamerMatchWithVod(
     }
 
     const streamerParticipant = match.info.participants.find((participant) =>
-      streamerLolAccounts.includes(participant.puuid)
+      streamer.lolAccounts.includes(participant.puuid)
     );
 
     if (streamerParticipant) {
@@ -225,17 +229,7 @@ async function upsertStreamerMatchWithVod(
   }
 }
 
-export async function createStreamerMatchupsVods(id: number) {
-  const streamer = await prisma.streamer.findUnique({
-    where: {
-      id: id,
-    },
-  });
-
-  if (streamer === null) {
-    return;
-  }
-
+export async function createStreamerMatchupsVods(streamer: Streamer) {
   const streamerVods = await listStreamerVods(streamer.twitchId);
   const firstVodStartTime = new Date(streamerVods[0].created_at);
 
@@ -244,7 +238,7 @@ export async function createStreamerMatchupsVods(id: number) {
     streamerVods.at(-1).duration
   );
 
-  const streamerAccountMatches: [] = [];
+  const streamerAccountMatches: string[] = [];
 
   for (const streamerAccount of streamer.lolAccounts) {
     const accountMatches: [] = await listStreamerAccountMatches(
@@ -263,7 +257,7 @@ export async function createStreamerMatchupsVods(id: number) {
       streamer.lolAccounts
     );
     if (vodMatchup) {
-      await upsertStreamerMatchWithVod(vodMatchup, streamer.lolAccounts);
+      await upsertStreamerMatchWithVod(vodMatchup, streamer);
     }
   }
 
