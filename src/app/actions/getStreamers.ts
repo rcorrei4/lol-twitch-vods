@@ -18,14 +18,10 @@ export async function listMatches(
       participants: {
         some: {
           AND: [
-            {
-              streamer: {
-                isNot: null,
-              },
-            },
             streamers && streamers.length > 0
               ? { streamer: { displayName: { in: streamers } } }
               : {},
+
             champions && champions.length > 0
               ? { championName: { in: champions } }
               : {},
@@ -42,23 +38,26 @@ export async function listMatches(
     },
   });
 
-  if (enemyChampions) {
-    const filteredMatches = matches.filter((match) => {
-      return match.participants.some((participant) => {
-        if (participant.streamer) {
-          const streamerLane = participant.position;
-          const enemy = match.participants.find(
-            (p) => p.position === streamerLane && !p.streamer
-          );
-
-          return enemy && enemyChampions?.includes(enemy.championName);
-        }
-        return false;
-      });
-    });
-
-    return filteredMatches;
+  if (!enemyChampions) {
+    return matches;
   }
 
-  return matches;
+  const filteredMatches = matches.filter((match) =>
+    match.participants.some((participant) => {
+      if (participant.streamerId) {
+        const streamerLane = participant.position;
+
+        const enemy = match.participants.find(
+          (p) =>
+            p.position === streamerLane &&
+            p.streamerId !== participant.streamerId
+        );
+
+        return enemy && enemyChampions.includes(enemy.championName);
+      }
+      return false;
+    })
+  );
+
+  return filteredMatches;
 }
