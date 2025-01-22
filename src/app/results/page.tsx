@@ -1,4 +1,5 @@
 import { listMatches } from "../actions/getStreamers";
+import { ListMatchesPage } from "../components/Results/page";
 
 type ResultsProps = {
   searchParams: Promise<{ [key: string]: string | undefined }>;
@@ -15,7 +16,7 @@ export default async function Results({ searchParams }: ResultsProps) {
     enemyChampions?.split(",")
   );
 
-  console.log(results);
-
-  return <></>;
+  return (
+    <ListMatchesPage matches={results} champions={champions?.split(",")} />
+  );
 }
