@@ -46,7 +46,9 @@ export default function Gallery({
     } else {
       params.delete(type);
     }
-    router.push(`${window.location.pathname}?${params.toString()}`);
+    router.push(`${window.location.pathname}?${params.toString()}`, {
+      scroll: false,
+    });
   }, [selectedElements, type, router]);
 
   const handleCheckboxChange = (label: string) => {
