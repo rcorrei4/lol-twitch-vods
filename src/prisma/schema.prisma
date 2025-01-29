@@ -56,7 +56,8 @@ model Participant {
   assists               Int
   position              Position
   win                   Boolean
-  vodUrl                String
+  vodId                 BigInt?
+  matchStartVod         String?
 
   matchId               BigInt           
   match                 Match         @relation(fields: [matchId], references: [id])

@@ -15,7 +15,8 @@ type Participant = {
   teamPosition: string;
   win: boolean;
   puuid: string;
-  vodUrl?: string;
+  vodId?: string;
+  matchStartVod?: string;
 };
 
 type MatchInfo = {
@@ -143,9 +144,9 @@ async function getMatchupVod(
       (vodStart <= matchStart && matchStart <= vodEnd) ||
       (vodStart <= matchEnd && matchEnd <= vodEnd)
     ) {
-      let vodUrl: string;
+      let matchStartVod: string;
       if (vodStart > matchStart) {
-        vodUrl = `${vod.url}?t=00h00m`;
+        matchStartVod = `00h00m`;
       } else {
         const vodMatchStart = Math.abs(
           vodStart.getTime() - matchStart.getTime()
@@ -155,10 +156,11 @@ async function getMatchupVod(
           (vodMatchStart % (1000 * 60 * 60)) / (1000 * 60)
         );
         const seconds = Math.floor((vodMatchStart % (1000 * 60)) / 1000);
-        vodUrl = `${vod.url}?t=${hours}h${minutes}m${seconds}s`;
+        matchStartVod = `${hours}h${minutes}m${seconds}s`;
       }
 
-      streamerParticipant.vodUrl = vodUrl;
+      streamerParticipant.vodId = vod.id;
+      streamerParticipant.matchStartVod = matchStartVod;
       return match;
     }
   }
@@ -189,8 +191,9 @@ async function upsertStreamerMatchWithVod(match: Match, streamer: Streamer) {
               assists: participant.assists,
               position: participant.teamPosition as any,
               win: participant.win,
-              vodUrl: participant.vodUrl ?? "",
-              streamer: participant.vodUrl
+              vodId: participant.vodId ? BigInt(participant.vodId) : undefined,
+              matchStartVod: participant.matchStartVod,
+              streamer: participant.vodId
                 ? {
                     connect: {
                       id: streamer.id,
@@ -219,7 +222,12 @@ async function upsertStreamerMatchWithVod(match: Match, streamer: Streamer) {
             matchId: match.info.gameId,
           },
         },
-        data: { vodUrl: streamerParticipant.vodUrl },
+        data: {
+          vodId: streamerParticipant.vodId
+            ? parseInt(streamerParticipant.vodId, 10)
+            : null,
+          matchStartVod: streamerParticipant.matchStartVod,
+        },
       });
 
       console.log(`Updated VOD URL for streamer ${streamerParticipant.puuid}`);
