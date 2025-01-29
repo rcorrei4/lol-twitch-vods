@@ -52,7 +52,7 @@ export function ListMatchesPage({ matches, champions }: ListMatchesPageProps) {
         {selectedVOD ? (
           <iframe
             key={selectedVOD}
-            src={`https://player.twitch.tv/?video=${selectedVOD[0]}&autoplay=true&parent=localhost`}
+            src={`https://player.twitch.tv/?video=${selectedVOD[0]}&time=${selectedVOD[1]}&autoplay=true&parent=localhost`}
             className="absolute top-0 left-0 w-full h-full border-0"
             allowFullScreen
             scrolling="no"
