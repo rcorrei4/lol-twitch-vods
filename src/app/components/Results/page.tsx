@@ -16,15 +16,14 @@ type ListMatchesPageProps = {
 
 export function ListMatchesPage({ matches, champions }: ListMatchesPageProps) {
   const [selectedVOD, setSelectedVOD] = useState<
-    [number | null, string | null]
-  >([null, null]);
+    [number | null, string | null] | null
+  >(null);
   const playerRef = useRef<HTMLDivElement | null>(null);
 
   const handleMatchClick = (vodId: number, matchStartVod: string) => {
-    setSelectedVOD([vodId, matchStartVod]); // Assuming `vodId` exists in Match
+    setSelectedVOD([vodId, matchStartVod]);
 
-    // Smooth scroll to Twitch player
-    playerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
   };
 
   const searchedMatchups = matches.map((match) => {
@@ -42,30 +41,23 @@ export function ListMatchesPage({ matches, champions }: ListMatchesPageProps) {
 
   return (
     <div className="p-5 flex flex-col gap-3">
-      {/* Twitch Player */}
       <div
         ref={playerRef}
-        className={`relative left-0 w-full h-0 pb-[56.25%] transition-all duration-500 ${
-          selectedVOD ? "opacity-100 scale-100" : "opacity-0 scale-95"
+        className={`transition-all duration-500 ease-in-out ${
+          selectedVOD ? "min-h-[200px] opacity-100" : "max-h-0 opacity-0"
         }`}
       >
-        {selectedVOD ? (
+        {selectedVOD && (
           <iframe
-            key={selectedVOD}
+            key={selectedVOD[0]} // Garante que o iframe é recriado corretamente
             src={`https://player.twitch.tv/?video=${selectedVOD[0]}&time=${selectedVOD[1]}&autoplay=true&parent=localhost`}
-            className="absolute top-0 left-0 w-full h-full border-0"
+            className="w-full h-[500px] border-0"
             allowFullScreen
-            scrolling="no"
             allow="encrypted-media"
           />
-        ) : (
-          <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-gray-900 text-white">
-            Select a match to watch
-          </div>
         )}
       </div>
 
-      {/* Match List */}
       {searchedMatchups.map((match) => (
         <button
           key={match.id}
@@ -73,7 +65,7 @@ export function ListMatchesPage({ matches, champions }: ListMatchesPageProps) {
             match.player?.win
               ? "bg-[#303043] border-[#3A374B]"
               : "bg-[#2E1F24] border-[#443438]"
-          } p-3 flex items-center border-t-2 transition-transform duration-200 hover:scale-105 active:scale-95`}
+          } p-3 flex items-center border-t-2`}
           onClick={() =>
             handleMatchClick(match.player?.vodId, match.player?.matchStartVod)
           }
