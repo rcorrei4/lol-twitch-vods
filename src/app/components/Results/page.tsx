@@ -43,15 +43,15 @@ export function ListMatchesPage({ matches, champions }: ListMatchesPageProps) {
     <div className="p-5 flex flex-col gap-3">
       <div
         ref={playerRef}
-        className={`transition-all duration-500 ease-in-out ${
-          selectedVOD ? "min-h-[200px] opacity-100" : "max-h-0 opacity-0"
+        className={`transition-all duration-700 overflow-hidden ease-in-out ${
+          selectedVOD ? "max-h-[999px]" : "max-h-0"
         }`}
       >
         {selectedVOD && (
           <iframe
             key={selectedVOD[0]} // Garante que o iframe é recriado corretamente
             src={`https://player.twitch.tv/?video=${selectedVOD[0]}&time=${selectedVOD[1]}&autoplay=true&parent=localhost`}
-            className="w-full h-[500px] border-0"
+            className="w-full aspect-video"
             allowFullScreen
             allow="encrypted-media"
           />
