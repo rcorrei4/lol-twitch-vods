@@ -3,13 +3,13 @@ const path = require("path");
 const axios = require("axios");
 
 const BASE_URL = "https://ddragon.leagueoflegends.com/";
-const OUTPUT_DIR = path.join(__dirname, "../../public/champions/");
+const OUTPUT_DIR = path.join(__dirname, "../public/champions/");
 
 async function getCurrentPatchVersion() {
   try {
     const patchVersionUrl = BASE_URL + "api/versions.json";
     const response = await axios.get(patchVersionUrl);
-    return response.data[0]; // Return the latest patch version
+    return response.data[0];
   } catch (error) {
     console.error("Error fetching patch version:", error.message);
     throw error;
@@ -20,7 +20,7 @@ async function getAllChampionsNames(currentVersion) {
   try {
     const championsUrl = `${BASE_URL}cdn/${currentVersion}/data/en_US/champion.json`;
     const response = await axios.get(championsUrl);
-    return Object.keys(response.data.data); // Extract champion names
+    return Object.keys(response.data.data);
   } catch (error) {
     console.error("Error fetching champion data:", error.message);
     throw error;
