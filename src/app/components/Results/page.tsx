@@ -1,16 +1,12 @@
 "use client";
 
-import { Match, Participant } from "@prisma/client";
+import { SearchResultMatch } from "@/app/actions/getStreamers";
 import Image from "next/image";
 import { useRef, useState } from "react";
 import { TbSwords } from "react-icons/tb";
 
-type StreamerMatch = Match & {
-  participants: Participant[];
-};
-
 type ListMatchesPageProps = {
-  matches: StreamerMatch[];
+  matches: SearchResultMatch[];
   champions?: string[];
 };
 
@@ -39,6 +35,21 @@ export function ListMatchesPage({ matches, champions }: ListMatchesPageProps) {
     return { player, enemy, ...match };
   });
 
+  function getTimeDifference(date: Date) {
+    const diffMs = Math.abs(Date.now() - date.getTime());
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+
+    if (diffMinutes >= 60 * 24 * 30) {
+      return `${Math.floor(diffMinutes / (60 * 24 * 30))}m`;
+    } else if (diffMinutes >= 60 * 24) {
+      return `${Math.floor(diffMinutes / (60 * 24))}d`;
+    } else if (diffMinutes >= 60) {
+      return `${Math.floor(diffMinutes / 60)}h`;
+    } else {
+      return `${diffMinutes}min`;
+    }
+  }
+
   return (
     <div className="p-5 flex flex-col gap-3">
       <div
@@ -65,33 +76,43 @@ export function ListMatchesPage({ matches, champions }: ListMatchesPageProps) {
             match.player?.win
               ? "bg-[#303043] border-[#3A374B]"
               : "bg-[#2E1F24] border-[#443438]"
-          } p-3 flex items-center border-t-2`}
+          } p-3 justify-around flex items-center border-t-[1px] rounded`}
           onClick={() =>
             handleMatchClick(match.player?.vodId, match.player?.matchStartVod)
           }
         >
-          <div className="flex items-center gap-2">
-            <Image
-              src={`/champions/${match.player?.championName}.png`}
-              alt={match.player?.championName ?? ""}
-              width={40}
-              height={40}
-              className="transition-transform duration-150"
-            />
-            <TbSwords size={30} className="stroke-slate-300" />
-            <Image
-              src={`/champions/${match.enemy?.championName}.png`}
-              alt={match.enemy?.championName ?? ""}
-              width={40}
-              height={40}
-              className="transition-transform duration-150"
-            />
+          <div className="justify-around flex items-center gap-2 w-3/4">
+            <span className="text-sm text-gray-400">
+              {getTimeDifference(match.gameStartDatetime)} ago
+            </span>
+            <div className="flex items-center gap-2">
+              <Image
+                src={`/champions/${match.player?.championName}.png`}
+                alt={match.player?.championName ?? ""}
+                width={40}
+                height={40}
+                className="transition-transform duration-150"
+              />
+              <TbSwords size={30} className="stroke-slate-400" />
+              <Image
+                src={`/champions/${match.enemy?.championName}.png`}
+                alt={match.enemy?.championName ?? ""}
+                width={40}
+                height={40}
+                className="transition-transform duration-150"
+              />
+            </div>
+            <span className="font-semibold">
+              {match.player?.streamer?.displayName}
+            </span>
           </div>
           <div className="flex gap-2 text-center text-slate-300 ml-auto">
             <div className="min-w-[14px]">{match.player?.kills}</div>
-            <span>/</span>
-            <div className="min-w-[14px]">{match.player?.deaths}</div>
-            <span>/</span>
+            <span className="text-gray-five">/</span>
+            <div className="min-w-[14px] text-red-400">
+              {match.player?.deaths}
+            </div>
+            <span className="text-gray-five">/</span>
             <div className="min-w-[14px]">{match.player?.assists}</div>
           </div>
         </button>

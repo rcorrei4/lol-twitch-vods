@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { Match, Participant, Streamer } from "@prisma/client";
 
 export async function listStreamers() {
   const streamers = await prisma.streamer.findMany();
@@ -8,11 +9,17 @@ export async function listStreamers() {
   return streamers;
 }
 
+export type SearchResultMatch = {
+  participants: ({
+    streamer: Streamer | null;
+  } & Participant)[];
+} & Match;
+
 export async function listMatches(
   streamers?: string[],
   champions?: string[],
   enemyChampions?: string[]
-) {
+): Promise<SearchResultMatch[]> {
   const matches = await prisma.match.findMany({
     where: {
       participants: {
