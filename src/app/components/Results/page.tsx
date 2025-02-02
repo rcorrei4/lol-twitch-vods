@@ -8,9 +8,16 @@ import { TbSwords } from "react-icons/tb";
 type ListMatchesPageProps = {
   matches: SearchResultMatch[];
   champions?: string[];
+  streamers?: string[];
+  enemies?: string[];
 };
 
-export function ListMatchesPage({ matches, champions }: ListMatchesPageProps) {
+export function ListMatchesPage({
+  matches,
+  champions,
+  streamers,
+  enemies,
+}: ListMatchesPageProps) {
   const [selectedVOD, setSelectedVOD] = useState<
     [number | null, string | null] | null
   >(null);
@@ -23,16 +30,33 @@ export function ListMatchesPage({ matches, champions }: ListMatchesPageProps) {
   };
 
   const searchedMatchups = matches.map((match) => {
-    const player = match.participants.find((participant) =>
-      champions?.includes(participant.championName)
-    );
+    // Make a better logic maybe?
+    if (champions || streamers) {
+      const player = match.participants.find(
+        (participant) =>
+          champions?.includes(participant.championName) ||
+          (participant.streamer &&
+            streamers?.includes(participant.streamer?.displayName))
+      );
 
-    const enemy = match.participants.find(
-      (participant) =>
-        participant !== player && participant.position === player?.position
-    );
+      const enemy = match.participants.find(
+        (participant) =>
+          participant !== player && participant.position === player?.position
+      );
 
-    return { player, enemy, ...match };
+      return { player, enemy, ...match };
+    } else {
+      const enemy = match.participants.find((participant) =>
+        enemies?.includes(participant.championName)
+      );
+
+      const player = match.participants.find(
+        (participant) =>
+          participant !== enemy && participant.position === enemy?.position
+      );
+
+      return { player, enemy, ...match };
+    }
   });
 
   function getTimeDifference(date: Date) {
@@ -40,7 +64,7 @@ export function ListMatchesPage({ matches, champions }: ListMatchesPageProps) {
     const diffMinutes = Math.floor(diffMs / (1000 * 60));
 
     if (diffMinutes >= 60 * 24 * 30) {
-      return `${Math.floor(diffMinutes / (60 * 24 * 30))}m`;
+      return `${Math.floor(diffMinutes / (60 * 24 * 30))}mo`;
     } else if (diffMinutes >= 60 * 24) {
       return `${Math.floor(diffMinutes / (60 * 24))}d`;
     } else if (diffMinutes >= 60) {
@@ -60,7 +84,7 @@ export function ListMatchesPage({ matches, champions }: ListMatchesPageProps) {
       >
         {selectedVOD && (
           <iframe
-            key={selectedVOD[0]} // Garante que o iframe é recriado corretamente
+            key={selectedVOD[0]}
             src={`https://player.twitch.tv/?video=${selectedVOD[0]}&time=${selectedVOD[1]}&autoplay=true&parent=localhost`}
             className="w-full aspect-video"
             allowFullScreen

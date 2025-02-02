@@ -6,17 +6,18 @@ type ResultsProps = {
 };
 
 export default async function Results({ searchParams }: ResultsProps) {
-  const streamers = (await searchParams).streamers;
-  const champions = (await searchParams).champions;
-  const enemyChampions = (await searchParams).enemyChampions;
+  const streamers = (await searchParams).streamers?.split(",");
+  const champions = (await searchParams).champions?.split(",");
+  const enemyChampions = (await searchParams).enemyChampions?.split(",");
 
-  const results = await listMatches(
-    streamers?.split(","),
-    champions?.split(","),
-    enemyChampions?.split(",")
-  );
+  const results = await listMatches(streamers, champions, enemyChampions);
 
   return (
-    <ListMatchesPage matches={results} champions={champions?.split(",")} />
+    <ListMatchesPage
+      matches={results}
+      streamers={streamers}
+      champions={champions}
+      enemies={enemyChampions}
+    />
   );
 }
