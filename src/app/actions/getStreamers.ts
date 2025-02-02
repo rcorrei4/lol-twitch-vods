@@ -43,6 +43,9 @@ export async function listMatches(
         },
       },
     },
+    orderBy: {
+      gameStartDatetime: "desc",
+    },
   });
 
   if (!enemyChampions) {
