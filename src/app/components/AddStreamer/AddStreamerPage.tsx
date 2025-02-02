@@ -241,6 +241,7 @@ export default function AddStreamerPage() {
               onClick={fetchLolAccount}
               disabled={stepTwo ? false : true}
               loading={stepTwo && loading}
+              type="button"
             >
               Add
             </Button>
@@ -272,6 +273,7 @@ export default function AddStreamerPage() {
             accentColor={"secondary"}
             onClick={() => setStepTwo(false)}
             disabled={stepTwo ? false : true}
+            type="button"
           >
             Back
           </Button>
