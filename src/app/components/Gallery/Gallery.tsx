@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { VscClearAll } from "react-icons/vsc";
+import { Button } from "../Button/Button";
 
 export type GalleryElement = {
   id?: number;
@@ -60,15 +62,31 @@ export default function Gallery({
   };
 
   return (
-    <div className="flex flex-col justify-center w-full">
+    <div className="flex flex-col justify-center w-full gap-5">
       <input
-        className="input mb-5 h-[36px] text-[14px] text-white/60 w-full bg-gray-two text-[#f4f4f5] px-3 py-1 rounded-lg border border-gray-three focus:outline-none focus:ring-2 focus:ring-gray-four focus:ring-offset-2 focus:ring-offset-[#09090b] transition-all duration-150 ease-in-out"
+        className="input h-[36px] text-[14px] text-white/60 w-full bg-gray-two text-[#f4f4f5] px-3 py-1 rounded border border-gray-three focus:outline-none focus:ring-2 focus:ring-gray-four focus:ring-offset-2 focus:ring-offset-[#09090b] transition-all duration-150 ease-in-out"
         name="text"
         type="text"
         placeholder={`Search for ${type}...`}
         onChange={(e) => setSearchElement(e.target.value)}
         aria-label={`Search for ${type}`}
       />
+      <div className={`flex justify-start`}>
+        <Button
+          variant={"simple"}
+          accentColor="secondary"
+          size="sm"
+          className={`w-auto flex items-center gap-2 overflow-hidden transition-all duration-300 ease-in-out ${
+            selectedElements.length > 0
+              ? "opacity-100 max-h-[40px]"
+              : "opacity-0 max-h-0"
+          }`}
+          onClick={() => setSelectedElements([])}
+        >
+          Clear
+          <VscClearAll size={20} />
+        </Button>
+      </div>
       <div className="flex flex-wrap justify-center">
         {filteredElements.map((filteredElement, index) => {
           const checked = selectedElements.includes(filteredElement.label);
