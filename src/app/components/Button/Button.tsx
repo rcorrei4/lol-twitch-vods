@@ -3,9 +3,7 @@ import { forwardRef } from "react";
 import { twMerge } from "tailwind-merge";
 
 const variants = cva(
-  [
-    "py-2.5 px-10 flex-1 rounded outline-none cursor-pointer disabled:opacity-30",
-  ],
+  ["py-2.5 px-10 rounded outline-none cursor-pointer disabled:opacity-30 "],
   {
     variants: {
       accentColor: {
@@ -15,7 +13,11 @@ const variants = cva(
       variant: {
         default: [],
         outline: ["bg-transparent border border-secondary"],
-        simple: [],
+        simple: ["bg-transparent border-none"],
+      },
+      size: {
+        default: [],
+        sm: ["px-5 py-1.5 "],
       },
     },
     defaultVariants: {
@@ -46,6 +48,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       loading,
       variant,
       accentColor,
+      size,
       ...props
     },
     ref
@@ -54,7 +57,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         type={type}
-        className={twMerge(variants({ variant, accentColor, className }))}
+        className={twMerge(variants({ variant, accentColor, size, className }))}
         {...props}
       >
         {loading ? <Loading /> : children}
