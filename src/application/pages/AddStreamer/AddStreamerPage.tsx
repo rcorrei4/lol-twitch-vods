@@ -1,13 +1,13 @@
 "use client";
 
-import getLolAccountPuuid from "@/app/actions/getLolAccountPuuid";
-import { getStreamerId } from "@/app/actions/twitch/getStreamerId";
+import getLolAccountPuuid from "@/application/actions/getLolAccountPuuid";
+import { getStreamerId } from "@/application/actions/twitch/getStreamerId";
 import updateOrCreateStreamer, {
   UpsertStreamerDTO,
-} from "@/app/actions/upsertStreamer";
+} from "@/application/actions/upsertStreamer";
 import { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
-import { Button } from "../Button/Button";
+import { Button } from "../../components/Button/Button";
 
 type LolAccount = {
   username: string;

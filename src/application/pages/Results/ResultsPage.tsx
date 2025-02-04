@@ -1,6 +1,6 @@
 "use client";
 
-import { SearchResultMatch } from "@/app/actions/getStreamers";
+import { SearchResultMatch } from "@/application/actions/getStreamers";
 import Image from "next/image";
 import { useRef, useState } from "react";
 import { TbSwords } from "react-icons/tb";

@@ -1,9 +1,7 @@
-"use server";
-
 import fs from "fs";
 import path from "path";
-import { listStreamers } from "./actions/getStreamers";
-import HomePage from "./components/Home/HomePage";
+import { listStreamers } from "../application/actions/getStreamers";
+import HomePage from "../application/pages/Home/HomePage";
 
 export default async function Home() {
   const championsDir = path.join(process.cwd(), "public/champions");

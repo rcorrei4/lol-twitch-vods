@@ -1,5 +1,5 @@
-import { listMatches } from "../actions/getStreamers";
-import { ListMatchesPage } from "../components/Results/page";
+import { listMatches } from "../../application/actions/getStreamers";
+import { ListMatchesPage } from "../../application/pages/Results/ResultsPage";
 
 type ResultsProps = {
   searchParams: Promise<{ [key: string]: string | undefined }>;

@@ -1,9 +1,9 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Button } from "../Button/Button";
-import { GalleryElement } from "../Gallery/Gallery";
-import Tabs from "../Tabs/Tabs";
+import { Button } from "../../components/Button/Button";
+import { GalleryElement } from "../../components/Gallery/Gallery";
+import Tabs from "../../components/Tabs/Tabs";
 
 type HomePageProps = {
   streamers: GalleryElement[];
