@@ -1,7 +1,9 @@
 "use client";
 
+import Gallery, {
+  GalleryElement,
+} from "@application/components/Gallery/Gallery";
 import { useEffect, useRef, useState } from "react";
-import Gallery, { GalleryElement } from "../Gallery/Gallery";
 
 type TabsProps = {
   champions: GalleryElement[];

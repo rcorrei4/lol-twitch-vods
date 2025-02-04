@@ -5,9 +5,9 @@ import { getStreamerId } from "@/application/actions/twitch/getStreamerId";
 import updateOrCreateStreamer, {
   UpsertStreamerDTO,
 } from "@/application/actions/upsertStreamer";
+import { Button } from "@application/components/Button/Button";
 import { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
-import { Button } from "../../components/Button/Button";
 
 type LolAccount = {
   username: string;

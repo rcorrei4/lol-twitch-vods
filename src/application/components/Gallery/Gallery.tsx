@@ -1,10 +1,10 @@
 "use client";
 
+import { Button } from "@application/components/Button/Button";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { VscClearAll } from "react-icons/vsc";
-import { Button } from "../Button/Button";
 
 export type GalleryElement = {
   id?: number;
