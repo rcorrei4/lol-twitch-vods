@@ -102,7 +102,11 @@ export function ListMatchesPage({
               : "bg-[#2E1F24] border-[#443438]"
           } p-3 justify-around flex items-center border-t-[1px] rounded`}
           onClick={() =>
-            handleMatchClick(match.player?.vodId, match.player?.matchStartVod)
+            // Yes
+            handleMatchClick(
+              match.player?.vodId as any,
+              match.player?.matchStartVod as any
+            )
           }
         >
           <div className="justify-around flex items-center gap-2 w-3/4">
