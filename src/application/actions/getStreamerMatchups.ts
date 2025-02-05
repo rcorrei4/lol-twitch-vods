@@ -1,5 +1,3 @@
-"use server";
-
 import { prisma } from "@/lib/prisma";
 import { Position, Streamer } from "@prisma/client";
 import { getTwitchAuthToken } from "./twitch/getTwitchToken";

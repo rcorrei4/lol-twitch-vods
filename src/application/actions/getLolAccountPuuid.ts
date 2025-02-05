@@ -6,7 +6,7 @@ export default async function getLolAccountPuuid(
   username: string,
   tag: string
 ) {
-  console.log("Searching streamer league of legends account...");
+  console.log("Searching streamer lol account...");
 
   const response = await fetch(
     `https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${username}/${tag}?api_key=${RIOT_GAMES_API_KEY}`

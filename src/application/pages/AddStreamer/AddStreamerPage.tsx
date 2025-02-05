@@ -1,7 +1,7 @@
 "use client";
 
 import getLolAccountPuuid from "@/application/actions/getLolAccountPuuid";
-import { getStreamerId } from "@/application/actions/twitch/getStreamerId";
+import { fetchStreamerId } from "@/application/actions/twitch/fetchStreamerId";
 import updateOrCreateStreamer, {
   UpsertStreamerDTO,
 } from "@/application/actions/upsertStreamer";
@@ -42,7 +42,7 @@ export default function AddStreamerPage() {
     name: "lolAccounts",
   });
 
-  async function fetchStreamerId() {
+  async function fetchStreamer() {
     setLoading(true);
     await trigger("streamerSearchQuery");
 
@@ -52,7 +52,7 @@ export default function AddStreamerPage() {
     }
 
     const streamerSearchQuery = getValues("streamerSearchQuery");
-    const streamer = await getStreamerId(streamerSearchQuery);
+    const streamer = await fetchStreamerId(streamerSearchQuery);
 
     if (!streamer) {
       setError("streamerSearchQuery", {
@@ -138,8 +138,8 @@ export default function AddStreamerPage() {
   }
 
   return (
-    <div className="p-3 flex flex-col justify-center gap-5">
-      <h1 className="mt-5 text-3xl text-center sm:text-5xl">
+    <div className="p-3 flex flex-col justify-center gap-5 max-w-[500px]">
+      <h1 className="mt-5 text-3xl text-center sm:text-4xl">
         Add new streamer
       </h1>
       <form
@@ -171,7 +171,7 @@ export default function AddStreamerPage() {
           </div>
           <Button
             accentColor={"secondary"}
-            onClick={fetchStreamerId}
+            onClick={fetchStreamer}
             loading={!stepTwo && loading}
             disabled={stepTwo ? true : false}
           >

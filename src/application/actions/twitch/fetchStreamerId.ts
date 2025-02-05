@@ -35,7 +35,7 @@ async function searchStreamer(username: string, twitchToken: string) {
   }
 }
 
-export async function getStreamerId(streamerUsername: string) {
+export async function fetchStreamerId(streamerUsername: string) {
   if (CLIENT_ID === undefined || CLIENT_SECRET === undefined) {
     throw Error("Expected CLIENT_ID and CLIENT_SECRET env variables!");
   }

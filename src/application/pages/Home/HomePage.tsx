@@ -28,7 +28,7 @@ export default function HomePage({ streamers, champions }: HomePageProps) {
   };
 
   return (
-    <>
+    <div>
       <Tabs champions={champions} streamers={streamers} />
       <Button
         className="fixed bottom-10 right-10 shadow-2xl shadow-gray-two"
@@ -36,6 +36,6 @@ export default function HomePage({ streamers, champions }: HomePageProps) {
       >
         Get results
       </Button>
-    </>
+    </div>
   );
 }

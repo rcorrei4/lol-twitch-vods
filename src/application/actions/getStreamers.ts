@@ -1,5 +1,3 @@
-"use server";
-
 import { prisma } from "@/lib/prisma";
 import { Match, Participant, Streamer } from "@prisma/client";
 

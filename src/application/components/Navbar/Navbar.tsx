@@ -12,7 +12,7 @@ export default function Navbar() {
 
   return (
     <nav className="relative bg-gray-two text-white">
-      <div className="container mx-auto flex items-center justify-between p-4">
+      <div className="md:w-11/12 max-w-screen-xl mx-auto flex items-center justify-between p-4">
         <div className="flex items-center space-x-2">
           <Image
             src="/lol_image.png"
