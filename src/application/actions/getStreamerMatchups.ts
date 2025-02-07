@@ -269,3 +269,18 @@ export async function createStreamerMatchupsVods(streamer: Streamer) {
 
   console.log("Finished");
 }
+
+export async function updateStreamerMatchupsVods(streamerId: number) {
+  const streamer = await prisma.streamer.findUnique({
+    where: {
+      id: streamerId,
+    },
+  });
+
+  if (!streamer) {
+    console.error("Streamer not found while trying to update matchups");
+    return;
+  }
+
+  await createStreamerMatchupsVods(streamer);
+}

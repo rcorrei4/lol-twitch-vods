@@ -1,3 +1,4 @@
+import { updateStreamerMatchupsVods } from "@/application/actions/getStreamerMatchups";
 import { createHmac, timingSafeEqual } from "crypto";
 
 const TWITCH_MESSAGE_ID = "Twitch-Eventsub-Message-Id".toLowerCase();
@@ -43,8 +44,11 @@ export async function POST(request: Request) {
     const requestBody = JSON.parse(requestRawBody);
 
     if (MESSAGE_TYPE_NOTIFICATION === requestHeaders.get(MESSAGE_TYPE)) {
-      console.log(`Event type: ${requestBody.subscription.type}`);
-      console.log(JSON.stringify(requestBody.event, null, 4));
+      console.log(
+        `Streamer with id of: ${requestBody.event.broadcaster_user_id} is now offline, checking for new videos...`
+      );
+
+      updateStreamerMatchupsVods(requestBody.event.broadcaster_user_id);
 
       return new Response(null, {
         status: 204,
