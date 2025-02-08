@@ -290,10 +290,10 @@ export async function createStreamerMatchupsVods(streamer: Streamer) {
   console.log("Finished");
 }
 
-export async function updateStreamerMatchupsVods(streamerId: number) {
+export async function updateStreamerMatchupsVods(streamerId: string) {
   const streamer = await prisma.streamer.findUnique({
     where: {
-      id: streamerId,
+      twitchId: streamerId,
     },
   });
 
