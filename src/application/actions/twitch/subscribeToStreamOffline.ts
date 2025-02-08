@@ -29,12 +29,29 @@ export async function subscribeToStreamOfflineNotification(streamerId: string) {
     },
   };
 
-  await fetch(`https://api.twitch.tv/helix/eventsub/subscriptions`, {
-    headers: {
-      "Client-Id": CLIENT_ID,
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
+  try {
+    const result = await fetch(
+      `https://api.twitch.tv/helix/eventsub/subscriptions`,
+      {
+        method: "POST",
+        headers: {
+          "Client-Id": CLIENT_ID,
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      }
+    );
+
+    if (result.ok) {
+      console.log(
+        `Subscribed to stream offline notification for streamerId: ${streamerId} successfully.`
+      );
+    }
+  } catch (error) {
+    console.error(
+      `Error while subscribing to streamer of id: ${streamerId}`,
+      error
+    );
+  }
 }
