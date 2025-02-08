@@ -6,6 +6,7 @@ import updateOrCreateStreamer, {
   UpsertStreamerDTO,
 } from "@/application/actions/upsertStreamer";
 import { Button } from "@application/components/Button/Button";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 
@@ -21,6 +22,8 @@ type AddStreamerForm = Omit<UpsertStreamerDTO, "lolAccounts"> & {
 };
 
 export default function AddStreamerPage() {
+  const router = useRouter();
+
   const [lolUsername, setLolUsername] = useState("");
   const [lolTag, setLolTag] = useState("");
   const [loading, setLoading] = useState(false);
@@ -135,6 +138,8 @@ export default function AddStreamerPage() {
         return lolAccount.puuid;
       }),
     });
+
+    router.push("/");
   }
 
   return (
