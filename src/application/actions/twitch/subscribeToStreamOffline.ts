@@ -24,34 +24,32 @@ export async function subscribeToStreamOfflineNotification(streamerId: string) {
     condition: { broadcaster_user_id: streamerId },
     transport: {
       method: "webhook",
-      callback: APP_BASE_URL + "/api/update-streamer-matchups",
+      callback: "https://" + APP_BASE_URL + "/api/update-streamer-matchups",
       secret: TWITCH_EVENTSUB_SECRET,
     },
   };
 
-  try {
-    const result = await fetch(
-      `https://api.twitch.tv/helix/eventsub/subscriptions`,
-      {
-        method: "POST",
-        headers: {
-          "Client-Id": CLIENT_ID,
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-      }
-    );
-
-    if (result.ok) {
-      console.log(
-        `Subscribed to stream offline notification for streamerId: ${streamerId} successfully.`
-      );
+  const result = await fetch(
+    `https://api.twitch.tv/helix/eventsub/subscriptions`,
+    {
+      method: "POST",
+      headers: {
+        "Client-Id": CLIENT_ID,
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
     }
-  } catch (error) {
+  );
+
+  if (result.ok) {
+    console.log(
+      `Subscribed to stream offline notification for streamerId: ${streamerId} successfully.`
+    );
+  } else {
     console.error(
       `Error while subscribing to streamer of id: ${streamerId}`,
-      error
+      result.status
     );
   }
 }
