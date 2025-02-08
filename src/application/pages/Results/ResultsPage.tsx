@@ -34,7 +34,8 @@ export function ListMatchesPage({
     if (champions || streamers) {
       const player = match.participants.find(
         (participant) =>
-          champions?.includes(participant.championName) ||
+          (champions?.includes(participant.championName) &&
+            participant.streamer) ||
           (participant.streamer &&
             streamers?.includes(participant.streamer?.displayName))
       );
