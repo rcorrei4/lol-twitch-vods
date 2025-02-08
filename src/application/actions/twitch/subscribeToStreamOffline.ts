@@ -13,7 +13,7 @@ export async function subscribeToStreamOfflineNotification(streamerId: string) {
     throw Error("Secret is missing from TWITCH_EVENTSUB_SECRET env variable!");
   }
 
-  let token = await getTwitchAuthToken();
+  const token = await getTwitchAuthToken();
 
   console.log(
     `Subscribing to stream offline notification for streamerId: ${streamerId}...`
@@ -29,15 +29,12 @@ export async function subscribeToStreamOfflineNotification(streamerId: string) {
     },
   };
 
-  const result = await fetch(
-    `https://api.twitch.tv/helix/eventsub/subscriptions`,
-    {
-      headers: {
-        "Client-Id": CLIENT_ID,
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    }
-  );
+  await fetch(`https://api.twitch.tv/helix/eventsub/subscriptions`, {
+    headers: {
+      "Client-Id": CLIENT_ID,
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
 }

@@ -20,8 +20,8 @@ async function searchStreamer(username: string, twitchToken: string) {
   if (result.ok) {
     const responseData = await result.json();
 
-    let streamer = responseData.data?.find(
-      (item: any) =>
+    const streamer = responseData.data?.find(
+      (item: { broadcaster_login: string }) =>
         (item?.broadcaster_login &&
           item.broadcaster_login.toLowerCase() === username.toLowerCase()) ||
         Object.values(item).some(
@@ -40,7 +40,7 @@ export async function fetchStreamerId(streamerUsername: string) {
     throw Error("Expected CLIENT_ID and CLIENT_SECRET env variables!");
   }
 
-  let token = await getTwitchAuthToken();
+  const token = await getTwitchAuthToken();
 
   if (streamerUsername === undefined) {
     throw Error("Missing streamer username!");

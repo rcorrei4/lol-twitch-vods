@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 
 export default function Navbar() {
@@ -24,9 +25,9 @@ export default function Navbar() {
         </div>
 
         <div className="hidden md:flex space-x-6">
-          <a href="/" className="hover:text-gray-400">
+          <Link href="/" className="hover:text-gray-400">
             Home
-          </a>
+          </Link>
           <a href="/add-streamer" className="hover:text-gray-400">
             Add Streamer
           </a>
@@ -62,20 +63,20 @@ export default function Navbar() {
             : "-translate-y-full opacity-0"
         } transition-all duration-300 z-40`}
       >
-        <a
+        <Link
           href="/"
           className="text-white hover:text-gray-400"
           onClick={() => setIsMenuOpen(false)}
         >
           Home
-        </a>
-        <a
+        </Link>
+        <Link
           href="/add-streamer"
           className="text-white hover:text-gray-400"
           onClick={() => setIsMenuOpen(false)}
         >
           Add Streamer
-        </a>
+        </Link>
       </div>
     </nav>
   );

@@ -28,6 +28,26 @@ type Match = {
   info: MatchInfo;
 };
 
+type TwitchVideo = {
+  id: string;
+  streamer_id: string;
+  user_id: string;
+  user_login: string;
+  user_name: string;
+  title: string;
+  description: string;
+  created_at: Date;
+  published_at: Date;
+  url: string;
+  thumbnail_url: string;
+  viewable: string;
+  view_count: number;
+  language: string;
+  type: string;
+  duration: string;
+  muted_segments: [{ duration: number; offset: number }];
+};
+
 async function listStreamerAccountMatches(
   accountPuuid: string,
   endTime: number
@@ -43,7 +63,7 @@ async function listStreamerAccountMatches(
 }
 
 async function listStreamerVods(streamerId: string) {
-  let token = await getTwitchAuthToken();
+  const token = await getTwitchAuthToken();
 
   const request = await fetch(
     `https://api.twitch.tv/helix/videos?user_id=${streamerId}`,
@@ -77,7 +97,7 @@ async function getMatch(matchId: string): Promise<Match | null> {
       gameStartTimestamp: data.info.gameStartTimestamp,
       gameEndTimestamp: data.info.gameEndTimestamp,
       gameId: data.info.gameId,
-      participants: data.info.participants.map((participant: any) => ({
+      participants: data.info.participants.map((participant: Participant) => ({
         championName: participant.championName,
         kills: participant.kills,
         deaths: participant.deaths,
@@ -113,7 +133,7 @@ function getVodEndDateTime(vodStart: Date, duration: string) {
 
 async function getMatchupVod(
   matchId: string,
-  streamerVods: any[],
+  streamerVods: TwitchVideo[],
   streamerLolAccounts: string[]
 ) {
   const match = await getMatch(matchId);
@@ -187,7 +207,7 @@ async function upsertStreamerMatchWithVod(match: Match, streamer: Streamer) {
               kills: participant.kills,
               deaths: participant.deaths,
               assists: participant.assists,
-              position: participant.teamPosition as any,
+              position: participant.teamPosition as Position,
               win: participant.win,
               vodId: participant.vodId ? BigInt(participant.vodId) : undefined,
               matchStartVod: participant.matchStartVod,
@@ -237,7 +257,7 @@ async function upsertStreamerMatchWithVod(match: Match, streamer: Streamer) {
 
 export async function createStreamerMatchupsVods(streamer: Streamer) {
   const streamerVods = await listStreamerVods(streamer.twitchId);
-  const firstVodStartTime = new Date(streamerVods[0].created_at);
+  //const firstVodStartTime = new Date(streamerVods[0].created_at);
 
   const lastVodEndTime = getVodEndDateTime(
     new Date(streamerVods.at(-1).created_at),

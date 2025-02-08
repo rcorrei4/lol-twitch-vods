@@ -2,6 +2,7 @@ import { listStreamers } from "@application/actions/getStreamers";
 import HomePage from "@application/pages/Home/HomePage";
 import fs from "fs";
 import path from "path";
+import { Suspense } from "react";
 
 export default async function Home() {
   const championsDir = path.join(process.cwd(), "public/champions");
@@ -18,18 +19,21 @@ export default async function Home() {
     label: path.basename(fileName, path.extname(fileName)),
   }));
 
-  let streamers: any = [];
   try {
-    streamers = await listStreamers();
+    const streamers = await listStreamers();
+
+    const streamersGallery = streamers.map((streamer) => ({
+      label: streamer.displayName,
+      id: streamer.id,
+      imageUrl: streamer.profileImage,
+    }));
+
+    return (
+      <Suspense>
+        <HomePage champions={champions} streamers={streamersGallery} />
+      </Suspense>
+    );
   } catch (error) {
     console.error("Error fetching streamers:", error);
   }
-
-  const streamersGallery = streamers.map((streamer: any) => ({
-    label: streamer.displayName,
-    id: streamer.id,
-    imageUrl: streamer.profileImage,
-  }));
-
-  return <HomePage champions={champions} streamers={streamersGallery} />;
 }

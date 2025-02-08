@@ -19,11 +19,11 @@ export function ListMatchesPage({
   enemies,
 }: ListMatchesPageProps) {
   const [selectedVOD, setSelectedVOD] = useState<
-    [number | null, string | null] | null
+    [bigint | null, string | null] | null
   >(null);
   const playerRef = useRef<HTMLDivElement | null>(null);
 
-  const handleMatchClick = (vodId: number, matchStartVod: string) => {
+  const handleMatchClick = (vodId: bigint, matchStartVod: string) => {
     setSelectedVOD([vodId, matchStartVod]);
 
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
@@ -101,13 +101,10 @@ export function ListMatchesPage({
               ? "bg-[#303043] border-[#3A374B]"
               : "bg-[#2E1F24] border-[#443438]"
           } p-3 justify-around flex items-center border-t-[1px] rounded`}
-          onClick={() =>
-            // Yes
-            handleMatchClick(
-              match.player?.vodId as any,
-              match.player?.matchStartVod as any
-            )
-          }
+          onClick={() => {
+            if (!match.player?.vodId || !match.player?.matchStartVod) return;
+            handleMatchClick(match.player.vodId, match.player.matchStartVod);
+          }}
         >
           <div className="justify-around flex items-center gap-2 w-3/4">
             <span className="text-sm text-gray-400">

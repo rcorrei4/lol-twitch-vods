@@ -31,6 +31,6 @@ export default async function updateOrCreateStreamer(data: UpsertStreamerDTO) {
     create: data,
   });
 
-  createStreamerMatchupsVods(streamerUpsertResult);
+  await createStreamerMatchupsVods(streamerUpsertResult);
   subscribeToStreamOfflineNotification(data.twitchId);
 }
