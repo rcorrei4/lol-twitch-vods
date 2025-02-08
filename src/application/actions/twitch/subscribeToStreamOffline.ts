@@ -1,7 +1,7 @@
 import { getTwitchAuthToken } from "./getTwitchToken";
 
 const CLIENT_ID = process.env.TWITCH_CLIENT_ID || "";
-const APP_BASE_URL = process.env.APP_BASE_URL;
+const APP_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const TWITCH_EVENTSUB_SECRET = process.env.TWITCH_EVENTSUB_SECRET;
 
 export async function subscribeToStreamOfflineNotification(streamerId: string) {
