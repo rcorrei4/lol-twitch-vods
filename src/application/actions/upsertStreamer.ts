@@ -2,7 +2,6 @@
 
 import { prisma } from "@/lib/prisma";
 import { Streamer } from "@prisma/client";
-import { createStreamerMatchupsVods } from "./getStreamerMatchups";
 import { subscribeToStreamOfflineNotification } from "./twitch/subscribeToStreamOffline";
 
 export type UpsertStreamerDTO = Omit<Streamer, "id" | "createdAt">;
@@ -31,6 +30,6 @@ export default async function updateOrCreateStreamer(data: UpsertStreamerDTO) {
     create: data,
   });
 
-  createStreamerMatchupsVods(streamerUpsertResult);
+  //createStreamerMatchupsVods(streamerUpsertResult);
   subscribeToStreamOfflineNotification(data.twitchId);
 }

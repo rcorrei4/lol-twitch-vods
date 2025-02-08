@@ -222,7 +222,7 @@ export default function AddStreamerPage() {
               value={lolTag}
               placeholder="TAG"
               disabled={stepTwo ? false : true}
-              maxLength={4}
+              maxLength={5}
             />
             <div
               className={`col-span-full transition-all duration-500 ease-in-out ${

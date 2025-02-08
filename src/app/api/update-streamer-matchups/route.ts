@@ -33,6 +33,9 @@ export async function POST(request: Request) {
   const requestRawBody = await request.text();
   const requestHeaders = new Headers(request.headers);
 
+  console.log(requestRawBody);
+  console.log(requestHeaders);
+
   const message = await getHmacMessage(requestRawBody, requestHeaders);
   const hmac = "sha256=" + getHmac(secret, message);
 
