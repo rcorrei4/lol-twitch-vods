@@ -85,7 +85,7 @@ export function ListMatchesPage({
         {selectedVOD && (
           <iframe
             key={selectedVOD[0]}
-            src={`https://player.twitch.tv/?video=${selectedVOD[0]}&time=${selectedVOD[1]}&autoplay=true&parent=${process.env.APP_BASE_URL}`}
+            src={`https://player.twitch.tv/?video=${selectedVOD[0]}&time=${selectedVOD[1]}&autoplay=true&parent=${process.env.NEXT_PUBLIC_BASE_URL}`}
             className="w-full aspect-video"
             allowFullScreen
             allow="encrypted-media"
