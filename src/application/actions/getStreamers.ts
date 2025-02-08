@@ -30,6 +30,12 @@ export async function listMatches(
             champions && champions.length > 0
               ? { championName: { in: champions } }
               : {},
+
+            {
+              streamer: {
+                isNot: null,
+              },
+            },
           ],
         },
       },
