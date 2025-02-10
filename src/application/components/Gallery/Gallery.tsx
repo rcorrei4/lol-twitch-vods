@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { VscClearAll } from "react-icons/vsc";
+import { TextBox } from "../TextBox/TextBox";
 
 export type GalleryElement = {
   id?: number;
@@ -62,11 +63,9 @@ export default function Gallery({
   };
 
   return (
-    <div className="flex flex-col justify-center w-full gap-5">
-      <input
-        className="input h-[36px] text-[14px] text-white/60 w-full bg-gray-two text-[#f4f4f5] px-3 py-1 rounded border border-gray-three focus:outline-none focus:ring-2 focus:ring-gray-four focus:ring-offset-2 focus:ring-offset-[#09090b] transition-all duration-150 ease-in-out"
+    <div className="flex flex-col justify-center w-full gap-2">
+      <TextBox
         name="text"
-        type="text"
         placeholder={`Search for ${type}...`}
         onChange={(e) => setSearchElement(e.target.value)}
         aria-label={`Search for ${type}`}

@@ -5,6 +5,7 @@ import { fetchStreamerId } from "@/application/actions/twitch/fetchStreamerId";
 import updateOrCreateStreamer, {
   UpsertStreamerDTO,
 } from "@/application/actions/upsertStreamer";
+import { TextBox } from "@/application/components/TextBox/TextBox";
 import { Button } from "@application/components/Button/Button";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -152,11 +153,7 @@ export default function AddStreamerPage() {
         onSubmit={handleSubmit(handleSubmitForm)}
       >
         <div className="flex flex-col gap-3 border border-gray-two p-5 rounded">
-          <input
-            className="h-[40px] text-[14px] w-full outline-none bg-gray-two px-3 py-1 rounded-[5px] border border-gray-three
-            focus:ring-1 focus:ring-gray-three focus:ring-offset-1 focus:ring-offset-gray-two transition-all duration-400 ease-in-out
-            disabled:opacity-30 border-opacity-5"
-            type="text"
+          <TextBox
             placeholder="Twitch account"
             disabled={stepTwo ? true : false}
             {...register("streamerSearchQuery", {
@@ -203,11 +200,8 @@ export default function AddStreamerPage() {
         </div>
         <div className="border border-gray-two p-5 rounded">
           <div className="grid grid-cols-5 gap-3">
-            <input
-              className="col-span-3 h-[40px] text-[14px] placeholder-gray-six flex-1 outline-none bg-gray-two 
-              px-3 py-1 rounded-[5px] border border-gray-three border-opacity-5 focus:ring-1 focus:ring-gray-three focus:ring-offset-1 
-              focus:ring-offset-gray-two transition-all duration-400 ease-in-out disabled:opacity-30"
-              type="text"
+            <TextBox
+              className="col-span-3"
               onChange={(e) => {
                 setLolUsername(e.target.value);
               }}
@@ -216,11 +210,8 @@ export default function AddStreamerPage() {
               disabled={stepTwo ? false : true}
               maxLength={16}
             />
-            <input
-              className="col-span-2 h-[40px] text-[14px] flex-1 outline-none bg-gray-two px-3 py-1 rounded-[5px] 
-              border border-gray-two focus:ring-1 focus:ring-gray-three focus:ring-offset-1 focus:ring-offset-gray-two 
-              transition-all duration-400 ease-in-out disabled:opacity-30"
-              type="text"
+            <TextBox
+              className="col-span-2"
               onChange={(e) => {
                 setLolTag(e.target.value);
               }}
