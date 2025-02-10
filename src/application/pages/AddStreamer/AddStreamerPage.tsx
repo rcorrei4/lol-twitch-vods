@@ -22,7 +22,7 @@ type AddStreamerForm = Omit<UpsertStreamerDTO, "lolAccounts"> & {
 };
 
 export default function AddStreamerPage() {
-  const router = useRouter();
+  const { push } = useRouter();
 
   const [lolUsername, setLolUsername] = useState("");
   const [lolTag, setLolTag] = useState("");
@@ -139,7 +139,7 @@ export default function AddStreamerPage() {
       }),
     });
 
-    router.push("/");
+    push("/");
   }
 
   return (
@@ -192,7 +192,7 @@ export default function AddStreamerPage() {
             ></span>
           </span>
 
-          <div className="h-[25px] w-[2px] bg-gray-three"></div>
+          <div className="h-[25px] w-[2px] bg-gray-three" />
           <span className="flex justify-center items-center w-5 h-5 border-gray-two border-2 rounded-full">
             <span
               className={`flex w-4 h-4 rounded-full bg-primary transition-all duration-500 ease-in-out ${

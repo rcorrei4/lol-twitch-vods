@@ -32,5 +32,8 @@ export default async function updateOrCreateStreamer(data: UpsertStreamerDTO) {
   });
 
   createStreamerMatchupsVods(streamerUpsertResult);
-  subscribeToStreamOfflineNotification(data.twitchId);
+
+  if (!streamer) {
+    subscribeToStreamOfflineNotification(data.twitchId);
+  }
 }

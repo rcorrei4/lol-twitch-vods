@@ -4,6 +4,8 @@ import fs from "fs";
 import path from "path";
 import { Suspense } from "react";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const championsDir = path.join(process.cwd(), "public/champions");
   let fileNames: string[] = [];
