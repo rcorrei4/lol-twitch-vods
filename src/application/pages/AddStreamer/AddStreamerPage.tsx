@@ -1,6 +1,5 @@
 "use client";
 
-import getLolAccountPuuid from "@/application/actions/getLolAccountPuuid";
 import { fetchStreamerId } from "@/application/actions/twitch/fetchStreamerId";
 import updateOrCreateStreamer, {
   UpsertStreamerDTO,
@@ -110,22 +109,25 @@ export default function AddStreamerPage() {
       return;
     }
 
-    const data = await getLolAccountPuuid(lolUsername, lolTag);
+    const result = await fetch(
+      `/api/get-lol-account-puuid?username=${lolUsername}&tag=${lolTag}`
+    );
 
-    if (data["message"]) {
+    if (result.ok) {
+      const data = await result.json();
+      lolAccounts.append({
+        username: data.data["gameName"],
+        tag: data.data["tagLine"],
+        puuid: data.data["puuid"],
+      });
+    } else {
+      const responseText = await result.text();
+      console.log(responseText);
       setError("lolAccounts", {
         type: "custom",
-        message: data["message"],
+        message: responseText || result.statusText,
       });
-      setLoading(false);
-      return;
     }
-
-    lolAccounts.append({
-      username: data["gameName"],
-      tag: data["tagLine"],
-      puuid: data["puuid"],
-    });
     setLoading(false);
   }
 
