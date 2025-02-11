@@ -6,19 +6,17 @@ import updateOrCreateStreamer, {
 } from "@/application/actions/upsertStreamer";
 import { TextBox } from "@/application/components/TextBox/TextBox";
 import { Button } from "@application/components/Button/Button";
+import { LolAccount, Server } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 
-type LolAccount = {
-  username: string;
-  tag: string;
-  puuid: string;
-};
+type UpsertLolAccount = Omit<LolAccount, "id" | "streamerId">;
 
-type AddStreamerForm = Omit<UpsertStreamerDTO, "lolAccounts"> & {
+type AddStreamerForm = {
+  streamer: Omit<UpsertStreamerDTO, "lolAccounts">;
+  lolAccounts: UpsertLolAccount[];
   streamerSearchQuery: string;
-  lolAccounts: LolAccount[];
 };
 
 export default function AddStreamerPage() {
@@ -26,6 +24,7 @@ export default function AddStreamerPage() {
 
   const [lolUsername, setLolUsername] = useState("");
   const [lolTag, setLolTag] = useState("");
+  const [lolServer, setLolServer] = useState<Server>("br");
   const [loading, setLoading] = useState(false);
   const [stepTwo, setStepTwo] = useState(false);
 
@@ -66,10 +65,10 @@ export default function AddStreamerPage() {
       return;
     }
 
-    setValue("twitchId", streamer["id"]);
-    setValue("displayName", streamer["display_name"]);
-    setValue("profileImage", streamer["thumbnail_url"]);
-    setValue("login", streamer["broadcaster_login"]);
+    setValue("streamer.twitchId", streamer["id"]);
+    setValue("streamer.displayName", streamer["display_name"]);
+    setValue("streamer.profileImage", streamer["thumbnail_url"]);
+    setValue("streamer.login", streamer["broadcaster_login"]);
 
     setLoading(false);
     setStepTwo(true);
@@ -109,6 +108,15 @@ export default function AddStreamerPage() {
       return;
     }
 
+    if (!lolServer) {
+      setError("lolAccounts", {
+        type: "required",
+        message: "LoL Account Server is required!",
+      });
+      setLoading(false);
+      return;
+    }
+
     const result = await fetch(
       `/api/get-lol-account-puuid?username=${lolUsername}&tag=${lolTag}`
     );
@@ -119,6 +127,7 @@ export default function AddStreamerPage() {
         username: data.data["gameName"],
         tag: data.data["tagLine"],
         puuid: data.data["puuid"],
+        server: lolServer,
       });
     } else {
       const responseText = await result.text();
@@ -133,13 +142,13 @@ export default function AddStreamerPage() {
 
   async function handleSubmitForm(data: AddStreamerForm) {
     await updateOrCreateStreamer({
-      twitchId: data.twitchId,
-      displayName: data.displayName,
-      login: data.login,
-      profileImage: data.profileImage,
-      lolAccounts: data.lolAccounts.map((lolAccount) => {
-        return lolAccount.puuid;
-      }),
+      streamer: {
+        twitchId: data.streamer.twitchId,
+        displayName: data.streamer.displayName,
+        login: data.streamer.login,
+        profileImage: data.streamer.profileImage,
+      },
+      lolAccounts: data.lolAccounts,
     });
 
     push("/");
@@ -213,7 +222,7 @@ export default function AddStreamerPage() {
               maxLength={16}
             />
             <TextBox
-              className="col-span-2"
+              className="col-span-1"
               onChange={(e) => {
                 setLolTag(e.target.value);
               }}
@@ -222,6 +231,19 @@ export default function AddStreamerPage() {
               disabled={stepTwo ? false : true}
               maxLength={5}
             />
+            <select
+              id="server"
+              className="col-span-1 h-[40px] text-[14px] placeholder-gray-six outline-none bg-gray-two px-3 py-1 rounded-[5px] border border-gray-three border-opacity-5 focus:ring-1 focus:ring-gray-three focus:ring-offset-1 focus:ring-offset-gray-two transition-all duration-400 ease-in-out disabled:opacity-30"
+              onChange={(e) => {
+                setLolServer(e.target.value as Server);
+              }}
+            >
+              {Object.values(Server).map((server) => (
+                <option key={server} value={server}>
+                  {server.toUpperCase()}
+                </option>
+              ))}
+            </select>
             <div
               className={`col-span-full transition-all duration-500 ease-in-out ${
                 errors.lolAccounts

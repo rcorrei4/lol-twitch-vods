@@ -21,10 +21,36 @@ enum Position {
   UTILITY
 }
 
+enum Server {
+  br
+  eune
+  euw
+  jp
+  kr
+  lan
+  las
+  na
+  oce
+  tr
+  me
+  ru
+}
+
 model Token {
   id           Int       @id @default(autoincrement())
   access_token String    @unique
   expires_at   DateTime
+}
+
+model LolAccount {
+  id           Int           @id @default(autoincrement())
+  puuid        String        @unique
+  username     String
+  tag          String
+  server       Server
+
+  streamerId   Int?          
+  streamer     Streamer?     @relation(fields: [streamerId], references: [id])
 }
 
 model Streamer {
@@ -34,7 +60,7 @@ model Streamer {
   login              String
   profileImage       String
   createdAt          DateTime         @default(now())
-  lolAccounts        String[]
+  lolAccounts        LolAccount[]
 
   participants       Participant[]
 }

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { Position, Streamer } from "@prisma/client";
+import { LolAccount, Position, Streamer } from "@prisma/client";
+import { getApiRegion } from "../utils/get-region-from-server";
 import { getTwitchAuthToken } from "./twitch/getTwitchToken";
 
 const CLIENT_ID = process.env.TWITCH_CLIENT_ID || "";
@@ -48,17 +49,21 @@ type TwitchVideo = {
   muted_segments: [{ duration: number; offset: number }];
 };
 
-async function listStreamerAccountMatches(
-  accountPuuid: string,
-  endTime: number
+export async function listStreamerAccountMatches(
+  lolAccount: LolAccount,
+  endTime: number,
+  matchesCount: number = 20
 ) {
+  const region = getApiRegion(lolAccount.server);
   const response = await fetch(
-    `https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/${accountPuuid}/ids?api_key=${RIOT_GAMES_API_KEY}&endTime=${endTime}&count=50`
+    `https://${region}.api.riotgames.com/lol/match/v5/matches/by-puuid/${lolAccount.puuid}/ids?api_key=${RIOT_GAMES_API_KEY}&endTime=${endTime}&count=${matchesCount}`
   );
 
   if (response.ok) {
     const data = await response.json();
     return data;
+  } else {
+    console.error("Error while fetching player matches!");
   }
 }
 
@@ -81,9 +86,12 @@ async function listStreamerVods(streamerId: string) {
   }
 }
 
-async function getMatch(matchId: string): Promise<Match | null> {
+async function getMatch(
+  matchId: string,
+  region?: string
+): Promise<Match | null> {
   const response = await fetch(
-    `https://americas.api.riotgames.com/lol/match/v5/matches/${matchId}?api_key=${RIOT_GAMES_API_KEY}`
+    `https://${region}.api.riotgames.com/lol/match/v5/matches/${matchId}?api_key=${RIOT_GAMES_API_KEY}`
   );
 
   if (!response.ok) {
@@ -134,17 +142,18 @@ function getVodEndDateTime(vodStart: Date, duration: string) {
 async function getMatchupVod(
   matchId: string,
   streamerVods: TwitchVideo[],
-  streamerLolAccounts: string[]
+  streamerLolAccount: LolAccount
 ) {
-  const match = await getMatch(matchId);
+  const apiRegion = getApiRegion(streamerLolAccount.server);
+  const match = await getMatch(matchId, apiRegion);
 
   if (match === null) {
     console.error("Error while getting streamer match id=", matchId);
     return null;
   }
 
-  const streamerParticipant = match.info.participants.find((participant) =>
-    streamerLolAccounts.includes(participant.puuid)
+  const streamerParticipant = match.info.participants.find(
+    (participant) => streamerLolAccount.puuid === participant.puuid
   );
 
   if (!streamerParticipant) {
@@ -186,7 +195,11 @@ async function getMatchupVod(
   return null;
 }
 
-async function upsertStreamerMatchWithVod(match: Match, streamer: Streamer) {
+async function upsertStreamerMatchWithVod(
+  match: Match,
+  streamer: Streamer,
+  streamerLolAccounts: LolAccount
+) {
   try {
     const existingMatch = await prisma.match.findUnique({
       where: { id: BigInt(match.info.gameId) },
@@ -227,8 +240,8 @@ async function upsertStreamerMatchWithVod(match: Match, streamer: Streamer) {
       return;
     }
 
-    const streamerParticipant = match.info.participants.find((participant) =>
-      streamer.lolAccounts.includes(participant.puuid)
+    const streamerParticipant = match.info.participants.find(
+      (participant) => streamerLolAccounts.puuid === participant.puuid
     );
 
     if (streamerParticipant) {
@@ -255,7 +268,10 @@ async function upsertStreamerMatchWithVod(match: Match, streamer: Streamer) {
   }
 }
 
-export async function createStreamerMatchupsVods(streamer: Streamer) {
+export async function createStreamerMatchupsVods(
+  streamer: Streamer,
+  lolAccounts: LolAccount[]
+) {
   const streamerVods = await listStreamerVods(streamer.twitchId);
   //const firstVodStartTime = new Date(streamerVods[0].created_at);
 
@@ -264,26 +280,27 @@ export async function createStreamerMatchupsVods(streamer: Streamer) {
     streamerVods.at(-1).duration
   );
 
-  const streamerAccountMatches: string[] = [];
-
-  for (const streamerAccount of streamer.lolAccounts) {
+  for (const streamerLolAccount of lolAccounts) {
     const accountMatches: [] = await listStreamerAccountMatches(
-      streamerAccount,
+      streamerLolAccount,
       lastVodEndTime.getTime()
     );
-    streamerAccountMatches.push(...accountMatches);
-  }
 
-  for (const streamerAccountMatch of streamerAccountMatches) {
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    const vodMatchup = await getMatchupVod(
-      streamerAccountMatch,
-      streamerVods,
-      streamer.lolAccounts
-    );
-    if (vodMatchup) {
-      await upsertStreamerMatchWithVod(vodMatchup, streamer);
+    for (const accountMatch of accountMatches) {
+      const vodMatchup = await getMatchupVod(
+        accountMatch,
+        streamerVods,
+        streamerLolAccount
+      );
+      if (vodMatchup) {
+        await upsertStreamerMatchWithVod(
+          vodMatchup,
+          streamer,
+          streamerLolAccount
+        );
+      }
     }
   }
 
@@ -302,5 +319,11 @@ export async function updateStreamerMatchupsVods(streamerId: string) {
     return;
   }
 
-  await createStreamerMatchupsVods(streamer);
+  const streamerLolAccounts = await prisma.lolAccount.findMany({
+    where: {
+      streamerId: streamer.id,
+    },
+  });
+
+  await createStreamerMatchupsVods(streamer, streamerLolAccounts);
 }

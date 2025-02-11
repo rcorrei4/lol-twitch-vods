@@ -1,39 +1,59 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { Streamer } from "@prisma/client";
+import { LolAccount, Streamer } from "@prisma/client";
 import { createStreamerMatchupsVods } from "./getStreamerMatchups";
 import { subscribeToStreamOfflineNotification } from "./twitch/subscribeToStreamOffline";
 
 export type UpsertStreamerDTO = Omit<Streamer, "id" | "createdAt">;
+type UpsertLolAccountDTO = Omit<LolAccount, "id" | "streamerId">;
 
-export default async function updateOrCreateStreamer(data: UpsertStreamerDTO) {
-  const streamer = await prisma.streamer.findFirst({
+type updateOrCreateStreamerInput = {
+  streamer: UpsertStreamerDTO;
+  lolAccounts: UpsertLolAccountDTO[];
+};
+
+export default async function updateOrCreateStreamer({
+  streamer,
+  lolAccounts,
+}: updateOrCreateStreamerInput) {
+  const existingStreamer = await prisma.streamer.findFirst({
     where: {
-      twitchId: data.twitchId,
+      twitchId: streamer.twitchId,
     },
   });
-
-  const lolAccounts = Array.from(
-    new Set([...(streamer?.lolAccounts || []), ...data.lolAccounts])
-  );
 
   const streamerUpsertResult = await prisma.streamer.upsert({
     where: {
-      twitchId: data.twitchId,
+      twitchId: streamer.twitchId,
     },
     update: {
-      lolAccounts: lolAccounts,
-      displayName: data.displayName,
-      login: data.login,
-      profileImage: data.profileImage,
+      displayName: streamer.displayName,
+      login: streamer.login,
+      profileImage: streamer.profileImage,
     },
-    create: data,
+    create: streamer,
   });
 
-  createStreamerMatchupsVods(streamerUpsertResult);
+  const updatedLolAccounts = await Promise.all(
+    lolAccounts.map((lolAccount) =>
+      prisma.lolAccount.upsert({
+        where: { puuid: lolAccount.puuid },
+        create: {
+          streamerId: streamerUpsertResult.id,
+          ...lolAccount,
+        },
+        update: {
+          username: lolAccount.username,
+          tag: lolAccount.tag,
+        },
+      })
+    )
+  );
 
-  if (!streamer) {
-    subscribeToStreamOfflineNotification(data.twitchId);
+  createStreamerMatchupsVods(streamerUpsertResult, updatedLolAccounts);
+
+  if (!existingStreamer) {
+    subscribeToStreamOfflineNotification(streamer.twitchId);
   }
 }
