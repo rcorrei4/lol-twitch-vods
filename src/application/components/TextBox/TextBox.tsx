@@ -27,3 +27,5 @@ export const TextBox = forwardRef<HTMLInputElement, TextBoxProps>(
     );
   }
 );
+
+TextBox.displayName = "TextBox";
