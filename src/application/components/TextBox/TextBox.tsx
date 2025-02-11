@@ -6,14 +6,14 @@ type NoRef<T> = Omit<T, "ref">;
 type TextBoxNativeProps = Omit<NoRef<JSX.IntrinsicElements["input"]>, "type">;
 
 type TextBoxCustomProps = {
-  error?: string;
+  //error?: string;
   className?: string;
 };
 
 type TextBoxProps = TextBoxNativeProps & TextBoxCustomProps;
 
 export const TextBox = forwardRef<HTMLInputElement, TextBoxProps>(
-  ({ error, className, ...inputProps }, ref) => {
+  ({ className, ...inputProps }, ref) => {
     return (
       <input
         ref={ref}
