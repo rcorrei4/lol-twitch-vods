@@ -26,7 +26,13 @@ function getHmac(secret: string, message: string) {
 }
 
 function verifyMessage(hmac: string, verifySignature: string) {
-  return timingSafeEqual(Buffer.from(hmac), Buffer.from(verifySignature));
+  const hmacBuffer = Buffer.from(hmac);
+  const verifySignatureBuffer = Buffer.from(verifySignature);
+
+  const hmacUint8Array = new Uint8Array(hmacBuffer);
+  const verifySignatureUint8Array = new Uint8Array(verifySignatureBuffer);
+
+  return timingSafeEqual(hmacUint8Array, verifySignatureUint8Array);
 }
 
 export async function POST(request: Request) {

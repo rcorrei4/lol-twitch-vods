@@ -48,3 +48,5 @@ out
 .docker-volumes
 .vscode
 .nx
+
+.env
