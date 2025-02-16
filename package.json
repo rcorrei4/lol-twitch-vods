@@ -2,7 +2,9 @@
   "name": "@/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "postinstall": "prisma generate --schema=./apps/frontend/prisma/schema.prisma"
+  },
   "private": true,
   "dependencies": {
     "@prisma/client": "^6.3.1",
