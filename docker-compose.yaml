@@ -15,17 +15,6 @@ services:
       - "5432:5432"
     volumes:
       - "postgres_data:/var/lib/postgresql/data"
-  localstack:
-    container_name: "lol_twitch_vods_localstack"
-    image: localstack/localstack:latest
-    ports:
-      - "4566:4566"
-      - "4510-4559:4510-4559"
-    environment:
-      - DEBUG=1
-    volumes:
-      - "./.docker-volumes/localstack:/var/lib/localstack"
-      - "/var/run/docker.sock:/var/run/docker.sock"
 
 volumes:
   postgres_data:
