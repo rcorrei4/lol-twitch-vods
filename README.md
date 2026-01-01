@@ -1,87 +1,83 @@
-# Welcome to React Router!
+# LoL Twitch VODs
 
-A modern, production-ready template for building full-stack React applications using React Router.
+A web application for browsing League of Legends streamers and their match VODs with synchronized Twitch video playback.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+## Project Structure
 
-## Features
+```
+lol-twitch-vods/
+├── frontend/          # React + Vite frontend
+└── backend/           # ASP.NET Core API
+```
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+## Prerequisites
 
-## Getting Started
+- **Frontend**: [Bun](https://bun.sh/) 1.0+
+- **Backend**: [.NET 9 SDK](https://dotnet.microsoft.com/download)
+- **Database**: Docker & Docker Compose (for PostgreSQL)
 
-### Installation
+## Quick Start
 
-Install the dependencies:
+### Backend Setup
 
 ```bash
-npm install
+cd backend
+
+# Start PostgreSQL database
+docker compose up -d
+
+# Run migrations
+dotnet ef database update
+
+# Configure User Secrets (if needed)
+dotnet user-secrets set "TwitchApi:ClientId" "your_client_id"
+dotnet user-secrets set "TwitchApi:ClientSecret" "your_client_secret"
+
+# Run the API
+dotnet run
 ```
 
-### Development
+API will be available at `http://localhost:5240`
 
-Start the development server with HMR:
+### Frontend Setup
 
 ```bash
-npm run dev
+cd frontend
+
+# Install dependencies
+bun install
+
+# Run development server
+bun run dev
 ```
 
-Your application will be available at `http://localhost:5173`.
+Frontend will be available at `http://localhost:5173`
 
-## Building for Production
+## Environment Variables
 
-Create a production build:
-
-```bash
-npm run build
+### Frontend (.env)
+```
+VITE_API_BASE_URL=http://localhost:5240/api
+VITE_TWITCH_PARENT_DOMAIN=localhost
 ```
 
-## Deployment
-
-### Docker Deployment
-
-To build and run using Docker:
-
-```bash
-docker build -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
+### Backend (User Secrets)
+```
+TwitchApi:ClientId=<your_twitch_client_id>
+TwitchApi:ClientSecret=<your_twitch_client_secret>
 ```
 
-The containerized application can be deployed to any platform that supports Docker, including:
+## Tech Stack
 
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
+**Frontend:**
+- React 19
+- Vite
+- React Router v7
+- Tailwind CSS v4
+- TypeScript
 
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
-
-```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
-```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
-
----
-
-Built with ❤️ using React Router.
+**Backend:**
+- ASP.NET Core 9
+- Entity Framework Core
+- PostgreSQL 18
+- Minimal APIs
