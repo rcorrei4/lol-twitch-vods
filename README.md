@@ -30,8 +30,9 @@ docker compose up -d
 dotnet ef database update
 
 # Configure User Secrets (if needed)
-dotnet user-secrets set "TwitchApi:ClientId" "your_client_id"
-dotnet user-secrets set "TwitchApi:ClientSecret" "your_client_secret"
+dotnet user-secrets set "TwitchApi:ClientId" "your_twitch_client_id"
+dotnet user-secrets set "TwitchApi:ClientSecret" "your_twtich_client_secret"
+dotnet user-secrets set "RiotGamesApi:Key" "your_riot_games_api_key"
 
 # Run the API
 dotnet run
