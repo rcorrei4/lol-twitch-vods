@@ -31,7 +31,6 @@ export default function Gallery({
     element.label.toLowerCase().includes(searchElement.toLowerCase()),
   );
 
-  // Initialize selected elements from URL params
   useEffect(() => {
     const initialParams = searchParams.get(type)?.split(",") || [];
     if (initialParams.at(0) !== "") {
@@ -39,7 +38,6 @@ export default function Gallery({
     }
   }, [type, searchParams]);
 
-  // Update URL params when selected elements change
   useEffect(() => {
     setSearchParams(
       (prev) => {
@@ -50,7 +48,7 @@ export default function Gallery({
         }
         return prev;
       },
-      { replace: true },
+      { replace: true, preventScrollReset: true },
     );
   }, [selectedElements, type, setSearchParams]);
 

@@ -68,6 +68,7 @@ VITE_TWITCH_PARENT_DOMAIN=localhost
 ```
 TwitchApi:ClientId=<your_twitch_client_id>
 TwitchApi:ClientSecret=<your_twitch_client_secret>
+RiotGamesApi:Key=<your_riot_games_api_key>
 ```
 
 ## Tech Stack
