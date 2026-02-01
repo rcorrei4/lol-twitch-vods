@@ -26,6 +26,16 @@ export type Match = {
   participants: Array<Participant>;
 };
 
+export type MatchPaginatedResponse = {
+  data: Array<Match>;
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  readonly totalPages: number;
+  readonly hasNextPage: boolean;
+  readonly hasPreviousPage: boolean;
+};
+
 export type NotFoundError = {
   message: string;
 };
@@ -97,6 +107,13 @@ export type StreamerLolAccount = {
   server: Server;
 };
 
+export type MatchPaginatedResponseWritable = {
+  data: Array<Match>;
+  page: number;
+  pageSize: number;
+  totalCount: number;
+};
+
 export type GetMatchesData = {
   body?: never;
   path?: never;
@@ -104,6 +121,8 @@ export type GetMatchesData = {
     streamers?: Array<string>;
     champions?: Array<string>;
     enemyChampions?: Array<string>;
+    page?: number;
+    pageSize?: number;
   };
   url: "/api/match";
 };
@@ -112,7 +131,7 @@ export type GetMatchesResponses = {
   /**
    * OK
    */
-  200: Array<Match>;
+  200: MatchPaginatedResponse;
 };
 
 export type GetMatchesResponse = GetMatchesResponses[keyof GetMatchesResponses];
@@ -186,8 +205,11 @@ export type PutApiStreamerResponses = {
   /**
    * OK
    */
-  200: unknown;
+  200: Streamer;
 };
+
+export type PutApiStreamerResponse =
+  PutApiStreamerResponses[keyof PutApiStreamerResponses];
 
 export type GetTwitchStreamerData = {
   body?: never;

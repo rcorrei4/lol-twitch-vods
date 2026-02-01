@@ -2,6 +2,8 @@
 
 import {
   type DefaultError,
+  type InfiniteData,
+  infiniteQueryOptions,
   queryOptions,
   type UseMutationOptions,
 } from "@tanstack/react-query";
@@ -29,6 +31,7 @@ import type {
   GetTwitchStreamerError,
   GetTwitchStreamerResponse,
   PutApiStreamerData,
+  PutApiStreamerResponse,
 } from "../types.gen";
 
 export type QueryKey<TOptions extends Options> = [
@@ -93,6 +96,85 @@ export const getMatchesOptions = (options?: Options<GetMatchesData>) =>
     queryKey: getMatchesQueryKey(options),
   });
 
+const createInfiniteParams = <
+  K extends Pick<QueryKey<Options>[0], "body" | "headers" | "path" | "query">,
+>(
+  queryKey: QueryKey<Options>,
+  page: K,
+) => {
+  const params = { ...queryKey[0] };
+  if (page.body) {
+    params.body = {
+      ...(queryKey[0].body as any),
+      ...(page.body as any),
+    };
+  }
+  if (page.headers) {
+    params.headers = {
+      ...queryKey[0].headers,
+      ...page.headers,
+    };
+  }
+  if (page.path) {
+    params.path = {
+      ...(queryKey[0].path as any),
+      ...(page.path as any),
+    };
+  }
+  if (page.query) {
+    params.query = {
+      ...(queryKey[0].query as any),
+      ...(page.query as any),
+    };
+  }
+  return params as unknown as typeof page;
+};
+
+export const getMatchesInfiniteQueryKey = (
+  options?: Options<GetMatchesData>,
+): QueryKey<Options<GetMatchesData>> =>
+  createQueryKey("getMatches", options, true);
+
+export const getMatchesInfiniteOptions = (options?: Options<GetMatchesData>) =>
+  infiniteQueryOptions<
+    GetMatchesResponse,
+    AxiosError<DefaultError>,
+    InfiniteData<GetMatchesResponse>,
+    QueryKey<Options<GetMatchesData>>,
+    | number
+    | Pick<
+        QueryKey<Options<GetMatchesData>>[0],
+        "body" | "headers" | "path" | "query"
+      >
+  >(
+    // @ts-ignore
+    {
+      queryFn: async ({ pageParam, queryKey, signal }) => {
+        // @ts-ignore
+        const page: Pick<
+          QueryKey<Options<GetMatchesData>>[0],
+          "body" | "headers" | "path" | "query"
+        > =
+          typeof pageParam === "object"
+            ? pageParam
+            : {
+                query: {
+                  page: pageParam,
+                },
+              };
+        const params = createInfiniteParams(queryKey, page);
+        const { data } = await getMatches({
+          ...options,
+          ...params,
+          signal,
+          throwOnError: true,
+        });
+        return data;
+      },
+      queryKey: getMatchesInfiniteQueryKey(options),
+    },
+  );
+
 export const getRiotGamesAccountQueryKey = (
   options: Options<GetRiotGamesAccountData>,
 ) => createQueryKey("getRiotGamesAccount", options);
@@ -143,12 +225,12 @@ export const getApiStreamerOptions = (options?: Options<GetApiStreamerData>) =>
 export const putApiStreamerMutation = (
   options?: Partial<Options<PutApiStreamerData>>,
 ): UseMutationOptions<
-  unknown,
+  PutApiStreamerResponse,
   AxiosError<DefaultError>,
   Options<PutApiStreamerData>
 > => {
   const mutationOptions: UseMutationOptions<
-    unknown,
+    PutApiStreamerResponse,
     AxiosError<DefaultError>,
     Options<PutApiStreamerData>
   > = {

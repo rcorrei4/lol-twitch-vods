@@ -1,22 +1,31 @@
 import { useRef, useState } from "react";
 import { TbSwords } from "react-icons/tb";
-import type { Match } from "~/services/generated";
+import { useSearchParams } from "react-router";
+import { Button } from "~/components/Button/Button";
+import type { MatchPaginatedResponse } from "~/services/generated";
 
 type ListMatchesPageProps = {
-  matches: Match[];
+  paginatedResponse: MatchPaginatedResponse;
   champions?: string[];
   streamers?: string[];
   enemies?: string[];
 };
 
 export function ListMatchesPage({
-  matches,
+  paginatedResponse,
   champions,
   streamers,
   enemies,
 }: ListMatchesPageProps) {
-  if (!matches) {
-    return <h1>No matches found :(</h1>;
+  const [searchParams, setSearchParams] = useSearchParams();
+  const matches = paginatedResponse?.data ?? [];
+
+  if (!paginatedResponse || matches.length === 0) {
+    return (
+      <div className="p-5 flex flex-col items-center gap-4">
+        <h1 className="text-xl text-gray-400">No matches found :(</h1>
+      </div>
+    );
   }
 
   const [selectedVOD, setSelectedVOD] = useState<
@@ -26,12 +35,17 @@ export function ListMatchesPage({
 
   const handleMatchClick = (vodId: string | number, matchStartVod: string) => {
     setSelectedVOD([vodId.toString(), matchStartVod]);
+    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+  };
 
+  const handlePageChange = (newPage: number) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("page", newPage.toString());
+    setSearchParams(newParams);
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
   };
 
   const searchedMatchups = matches.map((match) => {
-    // Make a better logic maybe?
     if (champions || streamers) {
       const player = match.participants?.find(
         (participant) =>
@@ -143,6 +157,33 @@ export function ListMatchesPage({
           </div>
         </button>
       ))}
+
+      <div className="flex justify-center items-center gap-4 mt-4">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!paginatedResponse.hasPreviousPage}
+          onClick={() => handlePageChange(paginatedResponse.page - 1)}
+        >
+          Previous
+        </Button>
+
+        <span className="text-gray-400">
+          Page {paginatedResponse.page} of {paginatedResponse.totalPages}
+          <span className="text-gray-500 ml-2">
+            ({paginatedResponse.totalCount} total)
+          </span>
+        </span>
+
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!paginatedResponse.hasNextPage}
+          onClick={() => handlePageChange(paginatedResponse.page + 1)}
+        >
+          Next
+        </Button>
+      </div>
     </div>
   );
 }

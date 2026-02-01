@@ -13,12 +13,11 @@ public static class RiotGamesEndpoints
         var group = app.MapGroup("/api/riot")
               .WithTags("RiotGames");
 
-          // GET /api/riot/lol-account?username=rcorrei4&tag=br1
           group.MapGet("/lol-account", async Task<Results<Ok<GetLolAccountResponse>, NotFound<NotFoundError>>> (
               string username,
               string tag,
               Server server,
-              RiotGamesService riotGamesService) =>
+              IRiotGamesService riotGamesService) =>
           {
               var lolAccount = await riotGamesService.GetLolAccount(username, server, tag);
 

@@ -17,7 +17,6 @@ public static class Vod
         int minutes = match.Groups[2].Success ? int.Parse(match.Groups[2].Value) : 0;
         int seconds = match.Groups[3].Success ? int.Parse(match.Groups[3].Value) : 0;
 
-        // Use TimeSpan for the math
         var durationSpan = new TimeSpan(hours, minutes, seconds);
 
         return vodStart.Add(durationSpan);

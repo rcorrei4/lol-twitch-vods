@@ -78,6 +78,7 @@ export const putApiStreamer = <ThrowOnError extends boolean = false>(
     unknown,
     ThrowOnError
   >({
+    responseType: "json",
     url: "/api/streamer",
     ...options,
     headers: {

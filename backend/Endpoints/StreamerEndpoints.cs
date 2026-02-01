@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using lol_twitch_vods_api.Data;
 using lol_twitch_vods_api.Models;
 using lol_twitch_vods_api.Services;
@@ -35,37 +34,47 @@ public static class StreamerEndpoints
         var group = app.MapGroup("/api/streamer").WithTags("Streamer");
 
         group.MapGet("/", async Task<Results<Ok<List<Streamer>>, NotFound<NotFoundError>>> (
-            AppDbContext context
+            AppDbContext context,
+            ILogger<AppDbContext> logger
         ) =>
         {
-            var streamers = context.Streamers.ToList();
+            logger.LogDebug("Fetching all streamers");
 
-             if (streamers == null)
-              {
-                  return TypedResults.NotFound(new NotFoundError($"Not streamer found"));
-              }
+            var streamers = await context.Streamers.ToListAsync();
 
+            if (streamers == null || streamers.Count == 0)
+            {
+                logger.LogDebug("No streamers found");
+                return TypedResults.NotFound(new NotFoundError("No streamer found"));
+            }
+
+            logger.LogDebug("Found {Count} streamers", streamers.Count);
             return TypedResults.Ok(streamers);
         }).WithTags("Streamers");
 
         group.MapPut("/", async (
             CreateStreamer streamerData,
             AppDbContext context,
-            TwitchService twitchService,
-            RiotGamesService riotGamesService
+            ITwitchService twitchService,
+            IRiotGamesService riotGamesService,
+            ILogger<AppDbContext> logger
         ) =>
         {
-            Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(streamerData));
+            logger.LogDebug("Creating/updating streamer with TwitchId: {TwitchId}", streamerData.TwitchId);
+            logger.LogDebug("Streamer data: {Data}", JsonSerializer.Serialize(streamerData));
 
             Streamer? streamer = null;
-            var existingStreamer = context.Streamers.Where(s => s.TwitchId == streamerData.TwitchId).Include(s => s.LolAccounts).FirstOrDefault();
-            // var streamerAccountsPuuids = streamerData.LolAccounts.Select(la => la.Puuid);
+            var existingStreamer = await context.Streamers
+                .Where(s => s.TwitchId == streamerData.TwitchId)
+                .Include(s => s.LolAccounts)
+                .FirstOrDefaultAsync();
+
             if (existingStreamer != null)
             {
                 streamer = existingStreamer;
                 foreach (StreamerLolAccount lolAccount in streamerData.LolAccounts)
                 {
-                    var existingLolAccount = existingStreamer.LolAccounts.First(la => la.Puuid == lolAccount.Puuid);
+                    var existingLolAccount = existingStreamer.LolAccounts.FirstOrDefault(la => la.Puuid == lolAccount.Puuid);
 
                     if (existingLolAccount != null)
                     {
@@ -110,34 +119,71 @@ public static class StreamerEndpoints
                 context.Streamers.Add(newStreamer);
             }
 
-            context.SaveChanges();
+            await context.SaveChangesAsync();
 
             var streamerVideos = await twitchService.ListStreamerVods(streamer.TwitchId);
 
-            var duration = streamerVideos.data.Last().duration;
-            var lastVodStartTime = DateTime.Parse(streamerVideos.data.Last().created_at).ToUniversalTime();
+            if (streamerVideos?.data == null || streamerVideos.data.Length == 0)
+            {
+                logger.LogWarning("No VODs found for streamer {TwitchId}", streamer.TwitchId);
+                return TypedResults.Ok(streamer);
+            }
+
+            var lastVod = streamerVideos.data.LastOrDefault();
+            if (lastVod == null)
+            {
+                logger.LogWarning("No last VOD available for streamer {TwitchId}", streamer.TwitchId);
+                return TypedResults.Ok(streamer);
+            }
+
+            var duration = lastVod.duration;
+            var lastVodStartTime = DateTime.Parse(lastVod.created_at).ToUniversalTime();
 
             var lastVodEndTime = Vod.GetVodEndDateTime(lastVodStartTime, duration);
+            logger.LogDebug("LastVodEndTime: {lastVodEndTime}", lastVodEndTime);
             var lastVodEndTimestamp = new DateTimeOffset(lastVodEndTime.ToUniversalTime()).ToUnixTimeSeconds();
 
-            Console.WriteLine($"LolAccounts count: {streamer.LolAccounts.Count}");
+            logger.LogDebug("LolAccounts count: {Count}", streamer.LolAccounts.Count);
+
+            var matchesToAdd = new List<Models.Match>();
+            var newMatchCount = 0;
+            var updatedMatchCount = 0;
 
             foreach (LolAccount lolAccount in streamer.LolAccounts)
             {
-                Console.WriteLine($"Fetching matches for: {lolAccount.Puuid}");
+                logger.LogDebug("Fetching matches for: {Puuid}", lolAccount.Puuid);
                 var accountMatches = await riotGamesService.ListAccountMatches(lolAccount.Puuid, lolAccount.Server, lastVodEndTimestamp);
 
-                Console.WriteLine($"Found {accountMatches.Count} matches");
+                if (accountMatches == null || accountMatches.Count == 0)
+                {
+                    logger.LogDebug("No matches found for account {Puuid}", lolAccount.Puuid);
+                    continue;
+                }
+
+                logger.LogDebug("Found {Count} matches", accountMatches.Count);
                 foreach (string accountMatchId in accountMatches)
                 {
-                    Console.WriteLine($"Processing match: {accountMatchId}");
+                    logger.LogDebug("Processing match: {MatchId}", accountMatchId);
+
+                    // Check if match already exists
+                    var existingMatch = await context.Matches
+                        .Include(m => m.Participants)
+                        .FirstOrDefaultAsync(m => m.Puuid == accountMatchId);
+
                     var lolMatch = await riotGamesService.GetLolMatch(accountMatchId, lolAccount.Server);
 
-                    var streamerParticipant = lolMatch.info.participants.First(p => p.puuid == lolAccount.Puuid);
+                    if (lolMatch == null)
+                    {
+                        logger.LogWarning("Could not fetch match {MatchId}", accountMatchId);
+                        continue;
+                    }
+
+                    var streamerParticipant = lolMatch.info.participants.FirstOrDefault(p => p.puuid == lolAccount.Puuid);
 
                     if (streamerParticipant == null)
                     {
-                        Console.WriteLine($"No streamer participant found for matchId: {accountMatchId} and participantPuuid: {lolAccount.Puuid}");
+                        logger.LogWarning("No streamer participant found for matchId: {MatchId} and participantPuuid: {Puuid}",
+                            accountMatchId, lolAccount.Puuid);
                         continue;
                     }
 
@@ -149,52 +195,97 @@ public static class StreamerEndpoints
                         DateTime matchStart = DateTimeOffset.FromUnixTimeMilliseconds(lolMatch.info.gameStartTimestamp).UtcDateTime;
                         DateTime matchEnd = DateTimeOffset.FromUnixTimeMilliseconds(lolMatch.info.gameEndTimestamp).UtcDateTime;
 
-                        Console.WriteLine($"Checking VOD {vod.id}: vodStart={vodStart}, vodEnd={vodEnd}, matchStart={matchStart}, matchEnd={matchEnd}");
+                        logger.LogDebug("Checking VOD {VodId}: vodStart={VodStart}, vodEnd={VodEnd}, matchStart={MatchStart}, matchEnd={MatchEnd}",
+                            vod.id, vodStart, vodEnd, matchStart, matchEnd);
+
                         if ((vodStart <= matchStart && matchStart <= vodEnd) || (vodStart <= matchEnd && matchEnd <= vodEnd))
                         {
-                            Console.WriteLine("Match fits in VOD - creating match and participants");
-                            var newMatch = new Models.Match
-                            {
-                                GameEndDateTime = matchEnd,
-                                GameStartDateTime = matchStart,
-                            };
-
-                            context.Matches.Add(newMatch);
+                            logger.LogInformation("Match {MatchId} fits in VOD {VodId}", accountMatchId, vod.id);
 
                             string matchStartVod;
-
                             if (vodStart > matchStart)
                             {
                                 matchStartVod = "00h00m";
                             }
                             else
                             {
-                                // In C#, subtracting Dates gives you a TimeSpan object
                                 TimeSpan diff = matchStart - vodStart;
                                 matchStartVod = $"{(int)diff.TotalHours}h{diff.Minutes}m{diff.Seconds}s";
                             }
 
-                            context.Participants.AddRange(lolMatch.info.participants.Select(p => new Participant
+                            if (existingMatch != null)
                             {
-                                Puuid=p.puuid,
-                                ChampionName=p.championName,
-                                Kills=p.kills,
-                                Deaths=p.deaths,
-                                Assists=p.assists,
-                                Position=Enum.Parse<Position>(p.teamPosition),
-                                Win=p.win,
-                                VodId=p.puuid == streamerParticipant.puuid ? long.Parse(vod.id) : null,
-                                MatchStartVod=p.puuid == streamerParticipant.puuid ? matchStartVod : null,
-                                MatchId=newMatch.Id,
-                                StreamerId=p.puuid == streamerParticipant.puuid ? streamer.Id : null,
-                            }));
+                                // Update existing participant with VOD info
+                                var existingParticipant = existingMatch.Participants
+                                    .FirstOrDefault(p => p.Puuid == streamerParticipant.puuid);
 
-                            context.SaveChanges();
+                                if (existingParticipant != null)
+                                {
+                                    existingParticipant.VodId = long.Parse(vod.id);
+                                    existingParticipant.MatchStartVod = matchStartVod;
+                                    existingParticipant.StreamerId = streamer.Id;
+                                    updatedMatchCount++;
+                                    logger.LogInformation("Updated existing participant for match {MatchId}", accountMatchId);
+                                }
+                                else
+                                {
+                                    logger.LogWarning("Existing match found but participant {Puuid} not found", streamerParticipant.puuid);
+                                }
+                            }
+                            else
+                            {
+                                logger.LogInformation("Creating new match {MatchId} with VOD {VodId}", accountMatchId, vod.id);
+
+                                var newMatch = new Models.Match
+                                {
+                                    Puuid = accountMatchId,
+                                    GameEndDateTime = matchEnd,
+                                    GameStartDateTime = matchStart,
+                                    Participants = lolMatch.info.participants.Select(p => new Participant
+                                    {
+                                        Puuid = p.puuid,
+                                        ChampionName = p.championName,
+                                        Kills = p.kills,
+                                        Deaths = p.deaths,
+                                        Assists = p.assists,
+                                        Position = ParsePosition(p.teamPosition),
+                                        Win = p.win,
+                                        VodId = p.puuid == streamerParticipant.puuid ? long.Parse(vod.id) : null,
+                                        MatchStartVod = p.puuid == streamerParticipant.puuid ? matchStartVod : null,
+                                        StreamerId = p.puuid == streamerParticipant.puuid ? streamer.Id : null,
+                                    }).ToList()
+                                };
+
+                                matchesToAdd.Add(newMatch);
+                                newMatchCount++;
+                            }
+
+                            // Break after finding a matching VOD to avoid duplicates
+                            break;
                         }
                     }
                 }
             }
+
+            if (matchesToAdd.Count > 0)
+            {
+                context.Matches.AddRange(matchesToAdd);
+            }
+
+            await context.SaveChangesAsync();
+            logger.LogDebug("Added {NewCount} new matches, updated {UpdatedCount} existing matches",
+                newMatchCount, updatedMatchCount);
+
+            return TypedResults.Ok(streamer);
+        });
+    }
+
+    private static Position ParsePosition(string teamPosition)
+    {
+        if (Enum.TryParse<Position>(teamPosition, ignoreCase: true, out var position))
+        {
+            return position;
         }
-        );
+        return Position.UTILITY;
     }
 }

@@ -24,15 +24,18 @@ builder.Services.AddSwaggerGen(options =>
     options.SchemaFilter<RequireNonNullablePropertiesSchemaFilter>();
 });
 
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: "AllowSpecificOrigins",
         policy =>
         {
-            // TODO: Add url from env var
-            policy.WithOrigins("http://localhost:5173")
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
+            if (allowedOrigins.Length > 0)
+            {
+                policy.WithOrigins(allowedOrigins)
+                      .AllowAnyHeader()
+                      .AllowAnyMethod();
+            }
         });
 });
 
@@ -42,11 +45,13 @@ builder.Services.Configure<TwitchApiConfiguration>(
 builder.Services.Configure<RiotGamesApiConfiguration>(
       builder.Configuration.GetSection("RiotGamesApi"));
 
-builder.Services.AddScoped<TwitchService>();
-builder.Services.AddScoped<RiotGamesService>();
+builder.Services.AddScoped<ITwitchService, TwitchService>();
+builder.Services.AddScoped<IRiotGamesService, RiotGamesService>();
 builder.Services.AddHttpClient();
 
 var app = builder.Build();
+
+app.UseGlobalExceptionHandler();
 
 app.MapTwitchEndpoints();
 app.MapRiotGamesEndpoints();
@@ -61,4 +66,3 @@ if (app.Environment.IsDevelopment())
   }
 
 app.Run();
-//TODO: prevent complete internal error response

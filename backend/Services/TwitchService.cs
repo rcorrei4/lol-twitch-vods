@@ -72,92 +72,85 @@ public class GetStreamerVideosReponse
 }
 
 // TODO: Add token error handling
-public class TwitchService(IOptions<TwitchApiConfiguration> configuration, IHttpClientFactory clientFactory)
+public class TwitchService(
+    IOptions<TwitchApiConfiguration> configuration,
+    IHttpClientFactory clientFactory,
+    ILogger<TwitchService> logger) : ITwitchService
 {
     private readonly TwitchApiConfiguration _configuration = configuration.Value;
     private readonly HttpClient _client = clientFactory.CreateClient();
-    private string token = "";
+    private readonly ILogger<TwitchService> _logger = logger;
+    private string _token = "";
 
     private async Task SetClientToken()
     {
+        _logger.LogDebug("Requesting Twitch OAuth token");
+
         var response = await _client.PostAsync($"https://id.twitch.tv/oauth2/token?client_id={_configuration.ClientId}&client_secret={_configuration.ClientSecret}&grant_type=client_credentials", null);
 
         response.EnsureSuccessStatusCode();
 
-        var responseBody = await response.Content.ReadFromJsonAsync<GetTokenResponse>();
-        if (responseBody != null)
-        {
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", responseBody.access_token);
-            _client.DefaultRequestHeaders.Add("Client-Id", _configuration.ClientId);
-            token = responseBody.access_token;
-        }
-        else
-        {
-            Console.WriteLine("⚠️ Response body is NULL!");
-        }
+        var result = await response.Content.ReadFromJsonAsync<GetTokenResponse>() ?? throw new ApplicationException("Error getting twitch access token!");
+
+        _token = result.access_token;
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _token);
+        _client.DefaultRequestHeaders.Add("Client-Id", _configuration.ClientId);
+
+        _logger.LogDebug("Twitch OAuth token set successfully");
     }
 
     public async Task<SearchChannelResponseData?> SearchStreamerAsync(string username)
     {
-        if (token == "")
+        if (_token == "")
         {
-            Console.WriteLine("Setting Twitch service token...");
             await SetClientToken();
         }
 
         var url = $"https://api.twitch.tv/helix/search/channels?query={username}";
-        Console.WriteLine($"Fetching: {url}");
-
-        // var httpResponse = await _client.GetAsync(url);
-        // var rawJson = await httpResponse.Content.ReadAsStringAsync();
-        // Console.WriteLine(rawJson);
+        _logger.LogDebug("Searching Twitch channels: {Url}", url);
 
         var response = await _client.GetFromJsonAsync<SearchChannelResponse>(url);
 
         if (response?.data != null && response.data.Length > 0)
         {
-            Console.WriteLine($"Found {response.data.Length} results");
+            _logger.LogDebug("Found {Count} results for username {Username}", response.data.Length, username);
 
             var exactMatch = response.data.FirstOrDefault(s =>
                 s.broadcaster_login.Equals(username, StringComparison.Ordinal));
 
             if (exactMatch != null)
             {
-                Console.WriteLine($"Exact match found: {exactMatch.display_name}");
+                _logger.LogDebug("Exact match found: {DisplayName}", exactMatch.display_name);
                 return exactMatch;
             }
 
-            Console.WriteLine($"No exact match, returning first result: {response.data[0].display_name}");
+            _logger.LogDebug("No exact match, returning first result: {DisplayName}", response.data[0].display_name);
             return response.data[0];
         }
 
-        Console.WriteLine("No results found");
+        _logger.LogWarning("No Twitch channels found for username {Username}", username);
         return null;
     }
 
-    public async Task<GetStreamerVideosReponse> ListStreamerVods(string streamerId)
+    public async Task<GetStreamerVideosReponse?> ListStreamerVods(string streamerId)
     {
-        if (token == "")
+        if (_token == "")
         {
-            Console.WriteLine("Setting Twitch service token...");
             await SetClientToken();
         }
 
-         var url = $"https://api.twitch.tv/helix/videos?user_id={streamerId}";
-        Console.WriteLine($"Fetching: {url}");
-
-        // var httpResponse = await _client.GetAsync(url);
-        // var rawJson = await httpResponse.Content.ReadAsStringAsync();
-        // Console.WriteLine(rawJson);
+        var url = $"https://api.twitch.tv/helix/videos?user_id={streamerId}";
+        _logger.LogDebug("Fetching VODs for streamer: {StreamerId}", streamerId);
 
         var response = await _client.GetFromJsonAsync<GetStreamerVideosReponse>(url);
 
         if (response?.data != null && response.data.Length > 0)
         {
+            _logger.LogDebug("Found {Count} VODs for streamer {StreamerId}", response.data.Length, streamerId);
             return response;
         }
 
-        Console.WriteLine("No results found");
+        _logger.LogWarning("No VODs found for streamer {StreamerId}", streamerId);
         return null;
     }
 }

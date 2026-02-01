@@ -10,10 +10,9 @@ public static class TwitchEndpoints
         var group = app.MapGroup("/api/twitch")
               .WithTags("Twitch");
 
-        // GET /api/twitch/streamer?username=shroud
         group.MapGet("/streamer", async Task<Results<Ok<SearchChannelResponseData>, NotFound<NotFoundError>>> (
             string username,
-            TwitchService twitchService) =>
+            ITwitchService twitchService) =>
         {
             var streamer = await twitchService.SearchStreamerAsync(username);
 

@@ -37,6 +37,9 @@ public class AppDbContext : DbContext
             }
         }
 
+        modelBuilder.Entity<Streamer>().HasQueryFilter(e => e.DeletedAt == default);
+        modelBuilder.Entity<LolAccount>().HasQueryFilter(e => e.DeletedAt == default);
+
         modelBuilder.Entity<Streamer>(entity =>
         {
             entity.Property(e => e.CreatedAt)
@@ -71,5 +74,12 @@ public class AppDbContext : DbContext
                 .ValueGeneratedOnAdd();
         });
     }
-    // public DbSet<Token> Tokens { get; set; }
+}
+
+public static class SoftDeleteQueryExtensions
+{
+    public static IQueryable<T> IgnoreSoftDeleteFilter<T>(this IQueryable<T> query) where T : AuditableEditableEntity
+    {
+        return query.IgnoreQueryFilters();
+    }
 }

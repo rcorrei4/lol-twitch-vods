@@ -7,18 +7,22 @@ export async function loader({ request }: Route.LoaderArgs) {
   const streamers = url.searchParams.get("streamers")?.split(",");
   const champions = url.searchParams.get("champions")?.split(",");
   const enemyChampions = url.searchParams.get("enemyChampions")?.split(",");
+  const page = parseInt(url.searchParams.get("page") ?? "1", 10);
+  const pageSize = parseInt(url.searchParams.get("pageSize") ?? "10", 10);
 
-  const { data: matches } = await getMatches({
+  const { data: paginatedResponse } = await getMatches({
     query: {
       streamers,
       champions,
       enemyChampions,
+      page,
+      pageSize,
     },
     throwOnError: true,
   });
 
   return {
-    matches,
+    paginatedResponse,
     streamers,
     champions,
     enemies: enemyChampions,
