@@ -3,18 +3,18 @@ import { useFieldArray, useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { Button } from "~/components/Button/Button";
 import { TextBox } from "~/components/TextBox/TextBox";
-import { getLolAccountPuuid } from "~/services/lol-accounts";
 import {
-  upsertStreamer,
-  type UpsertLolAccountDTO,
-  type UpsertStreamerDTO,
-} from "~/services/streamers";
-import { fetchStreamerId } from "~/services/twitch";
+  getRiotGamesAccount,
+  getTwitchStreamer,
+  putApiStreamer,
+  type CreateStreamer,
+  type StreamerLolAccount,
+} from "~/services/generated";
 import { Server } from "~/types/domain";
 
 type AddStreamerForm = {
-  streamer: Omit<UpsertStreamerDTO, "lolAccounts">;
-  lolAccounts: UpsertLolAccountDTO[];
+  streamer: Omit<CreateStreamer, "lolAccounts">;
+  lolAccounts: StreamerLolAccount[];
   streamerSearchQuery: string;
 };
 
@@ -53,7 +53,11 @@ export function AddStreamerPage() {
     }
 
     const streamerSearchQuery = getValues("streamerSearchQuery");
-    const streamer = await fetchStreamerId(streamerSearchQuery);
+    const { data: streamer } = await getTwitchStreamer({
+      query: {
+        username: streamerSearchQuery,
+      },
+    });
     console.log(streamer);
 
     if (!streamer) {
@@ -65,10 +69,10 @@ export function AddStreamerPage() {
       return;
     }
 
-    setValue("streamer.twitchId", streamer["id"]);
-    setValue("streamer.displayName", streamer["display_name"]);
-    setValue("streamer.profileImage", streamer["thumbnail_url"]);
-    setValue("streamer.login", streamer["broadcaster_login"]);
+    setValue("streamer.twitchId", streamer.id);
+    setValue("streamer.displayName", streamer.display_name);
+    setValue("streamer.profileImage", streamer.thumbnail_url);
+    setValue("streamer.login", streamer.broadcaster_login);
 
     setLoading(false);
     setStepTwo(true);
@@ -81,7 +85,7 @@ export function AddStreamerPage() {
     const accountExists = lolAccounts.fields.some(
       (lolAccount) =>
         lolAccount.username.toLowerCase() === lolUsername.toLowerCase() &&
-        lolAccount.tag.toLowerCase() === lolTag.toLowerCase()
+        lolAccount.tag.toLowerCase() === lolTag.toLowerCase(),
     );
 
     if (accountExists) {
@@ -118,11 +122,29 @@ export function AddStreamerPage() {
     }
 
     try {
-      const data = await getLolAccountPuuid(lolUsername, lolTag);
+      // const data = await getLolAccountPuuid(lolUsername, lolTag);
+      const { data: lolAccount } = await getRiotGamesAccount({
+        query: {
+          username: lolUsername,
+          tag: lolTag,
+          server: lolServer,
+        },
+      });
+
+      if (!lolAccount) {
+        setError("lolAccounts", {
+          type: "required",
+          message: "Account not found!",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // TODO: handle multiple servers
       lolAccounts.append({
-        username: data["gameName"],
-        tag: data["tagLine"],
-        puuid: data["puuid"],
+        username: lolAccount.gameName,
+        tag: lolAccount.tagLine,
+        puuid: lolAccount.puuid,
         server: lolServer,
       });
     } catch (error: any) {
@@ -139,14 +161,14 @@ export function AddStreamerPage() {
   }
 
   async function handleSubmitForm(data: AddStreamerForm) {
-    await upsertStreamer({
-      streamer: {
+    await putApiStreamer({
+      body: {
         twitchId: data.streamer.twitchId,
         displayName: data.streamer.displayName,
         login: data.streamer.login,
         profileImage: data.streamer.profileImage,
+        lolAccounts: data.lolAccounts,
       },
-      lolAccounts: data.lolAccounts,
     });
 
     navigate("/");

@@ -56,12 +56,14 @@ Frontend will be available at `http://localhost:5173`
 ## Environment Variables
 
 ### Frontend (.env)
+
 ```
 VITE_API_BASE_URL=http://localhost:5240/api
 VITE_TWITCH_PARENT_DOMAIN=localhost
 ```
 
 ### Backend (User Secrets)
+
 ```
 TwitchApi:ClientId=<your_twitch_client_id>
 TwitchApi:ClientSecret=<your_twitch_client_secret>
@@ -70,6 +72,7 @@ TwitchApi:ClientSecret=<your_twitch_client_secret>
 ## Tech Stack
 
 **Frontend:**
+
 - React 19
 - Vite
 - React Router v7
@@ -77,7 +80,12 @@ TwitchApi:ClientSecret=<your_twitch_client_secret>
 - TypeScript
 
 **Backend:**
+
 - ASP.NET Core 9
 - Entity Framework Core
 - PostgreSQL 18
 - Minimal APIs
+
+Todo:
+
+- Add data validation on endpints

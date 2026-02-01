@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using lol_twitch_vods_api.Data;
@@ -11,9 +12,11 @@ using lol_twitch_vods_api.Data;
 namespace lol_twitch_vods_api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260131224718_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -140,8 +143,8 @@ namespace lol_twitch_vods_api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("match_id");
 
-                    b.Property<string>("MatchStartVod")
-                        .HasColumnType("text")
+                    b.Property<DateTime?>("MatchStartVod")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("match_start_vod");
 
                     b.Property<int>("Position")
@@ -153,7 +156,7 @@ namespace lol_twitch_vods_api.Migrations
                         .HasColumnType("text")
                         .HasColumnName("puuid");
 
-                    b.Property<Guid?>("StreamerId")
+                    b.Property<Guid>("StreamerId")
                         .HasColumnType("uuid")
                         .HasColumnName("streamer_id");
 
@@ -251,6 +254,8 @@ namespace lol_twitch_vods_api.Migrations
                     b.HasOne("lol_twitch_vods_api.Models.Streamer", "Streamer")
                         .WithMany("Participants")
                         .HasForeignKey("StreamerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
                         .HasConstraintName("fk_participants_streamers_streamer_id");
 
                     b.Navigation("Match");

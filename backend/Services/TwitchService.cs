@@ -1,20 +1,27 @@
+using System.ComponentModel.DataAnnotations;
 using System.Net.Http.Headers;
 using lol_twitch_vods_api.Configuration;
 using Microsoft.Extensions.Options;
 namespace lol_twitch_vods_api.Services;
 
+public class GetTokenResponse
+{
+    public string access_token { get; set; } = "";
+    public int expires_in { get; set; }
+    public string token_type { get; set; } = "";
+}
+
 public class SearchChannelResponseData
 {
-    public string broadcaster_language { get; set; } = "";
-    public string broadcaster_login { get; set; } = "";
-    public string display_name { get; set; } = "";
+    [Required] public required string broadcaster_language { get; set; } = "";
+    [Required] public required string broadcaster_login { get; set; } = "";
+    [Required] public required string display_name { get; set; } = "";
     public string game_id { get; set; } = "";
     public string game_name { get; set; } = "";
-    public string id { get; set; } = "";
+    [Required] public required string id { get; set; } = "";
     public bool is_live { get; set; }
-    public string[] tag_ids { get; set; } = [];
     public string[] tags { get; set; } = [];
-    public string thumbnail_url { get; set; } = "";
+    [Required] public required string thumbnail_url { get; set; } = "";
     public string title { get; set; } = "";
     public string started_at { get; set; } = "";
 }
@@ -24,11 +31,44 @@ public class SearchChannelResponse
     public SearchChannelResponseData[] data { get; set; } = [];
 }
 
-public class GetTokenResponse
+
+public class GetStreamerVideoResponseMutedSegments
 {
-    public string access_token { get; set; } = "";
-    public int expires_in { get; set; }
-    public string token_type { get; set; } = "";
+    [Required] public required int duration { get; set; }
+    [Required] public required int offset { get; set; }
+}
+
+public class GetStreamerVideosResponseData
+{
+    [Required] public required string id { get; set; } = "";
+    public string? stream_id { get; set; } = "";
+    [Required] public required string user_id { get; set; } = "";
+    [Required] public required string user_login { get; set; } = "";
+    [Required] public required string user_name { get; set; } = "";
+    [Required] public required string title { get; set; } = "";
+    [Required] public required string description { get; set; } = "";
+    [Required] public required string created_at { get; set; } = "";
+    [Required] public required string published_at { get; set; } = "";
+    [Required] public required string url { get; set; } = "";
+    [Required] public required string thumbnail_url { get; set; } = "";
+    [Required] public required string viewable { get; set; } = "";
+    [Required] public required int view_count { get; set; }
+    [Required] public required string language { get; set; } = "";
+    [Required] public required string type { get; set; } = "";
+    [Required] public required string duration { get; set; } = "";
+    public GetStreamerVideoResponseMutedSegments? muted_segments { get; set; } = null;
+}
+
+
+public class GetStreamervideoResponsePagination
+{
+    public string? cursor { get; set; } = "";
+}
+
+public class GetStreamerVideosReponse
+{
+    public GetStreamerVideosResponseData[] data { get; set; } = [];
+    public GetStreamervideoResponsePagination? pagination { get; set; } = null;
 }
 
 // TODO: Add token error handling
@@ -57,7 +97,7 @@ public class TwitchService(IOptions<TwitchApiConfiguration> configuration, IHttp
         }
     }
 
-    public async Task<string?> SearchStreamerAsync(string username)
+    public async Task<SearchChannelResponseData?> SearchStreamerAsync(string username)
     {
         if (token == "")
         {
@@ -84,11 +124,37 @@ public class TwitchService(IOptions<TwitchApiConfiguration> configuration, IHttp
             if (exactMatch != null)
             {
                 Console.WriteLine($"Exact match found: {exactMatch.display_name}");
-                return exactMatch.id;
+                return exactMatch;
             }
 
             Console.WriteLine($"No exact match, returning first result: {response.data[0].display_name}");
-            return response.data[0].id;
+            return response.data[0];
+        }
+
+        Console.WriteLine("No results found");
+        return null;
+    }
+
+    public async Task<GetStreamerVideosReponse> ListStreamerVods(string streamerId)
+    {
+        if (token == "")
+        {
+            Console.WriteLine("Setting Twitch service token...");
+            await SetClientToken();
+        }
+
+         var url = $"https://api.twitch.tv/helix/videos?user_id={streamerId}";
+        Console.WriteLine($"Fetching: {url}");
+
+        // var httpResponse = await _client.GetAsync(url);
+        // var rawJson = await httpResponse.Content.ReadAsStringAsync();
+        // Console.WriteLine(rawJson);
+
+        var response = await _client.GetFromJsonAsync<GetStreamerVideosReponse>(url);
+
+        if (response?.data != null && response.data.Length > 0)
+        {
+            return response;
         }
 
         Console.WriteLine("No results found");

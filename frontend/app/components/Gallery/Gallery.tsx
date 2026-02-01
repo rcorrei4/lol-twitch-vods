@@ -5,8 +5,8 @@ import { Button } from "~/components/Button/Button";
 import { TextBox } from "../TextBox/TextBox";
 
 export type GalleryElement = {
-  id?: number;
-  imageUrl: string;
+  id?: string;
+  imageUrl?: string | null;
   label: string;
 };
 
@@ -28,7 +28,7 @@ export default function Gallery({
   const [selectedElements, setSelectedElements] = useState<string[]>([]);
 
   const filteredElements = elements.filter((element) =>
-    element.label.toLowerCase().includes(searchElement.toLowerCase())
+    element.label.toLowerCase().includes(searchElement.toLowerCase()),
   );
 
   // Initialize selected elements from URL params
@@ -50,7 +50,7 @@ export default function Gallery({
         }
         return prev;
       },
-      { replace: true }
+      { replace: true },
     );
   }, [selectedElements, type, setSearchParams]);
 
@@ -58,7 +58,7 @@ export default function Gallery({
     setSelectedElements((prev) =>
       prev.includes(label)
         ? prev.filter((value) => value !== label)
-        : [...prev, label]
+        : [...prev, label],
     );
   };
 
@@ -105,7 +105,7 @@ export default function Gallery({
                 aria-checked={checked}
               />
               <img
-                src={filteredElement.imageUrl}
+                src={filteredElement.imageUrl ?? ""}
                 alt={filteredElement.label}
                 width={80}
                 height={80}

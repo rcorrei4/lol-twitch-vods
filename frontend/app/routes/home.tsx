@@ -1,26 +1,40 @@
+import fs from "fs";
+import path from "path";
 import { HomePage } from "~/pages/Home/HomePage";
-import { listStreamers } from "~/services/streamers";
-import { getChampions } from "~/services/champions";
+import { getApiStreamer } from "~/services/generated";
 import type { Route } from "./+types/home";
 
 export async function loader() {
   try {
-    // Fetch streamers and champions in parallel
-    const [streamers, champions] = await Promise.all([
-      listStreamers(),
-      getChampions(),
-    ]);
+    const { data: streamers } = await getApiStreamer();
 
-    // Map streamers to gallery format
+    if (!streamers) {
+      throw Error("No streamers found!");
+    }
+
     const streamersGallery = streamers.map((streamer) => ({
       label: streamer.displayName,
       id: streamer.id,
       imageUrl: streamer.profileImage,
     }));
 
+    const championsDir = path.join(process.cwd(), "public/champions");
+    let fileNames: string[] = [];
+
+    try {
+      fileNames = fs.readdirSync(championsDir);
+    } catch (error) {
+      console.error("Error reading champions directory:", error);
+    }
+
+    const champions = fileNames.map((fileName) => ({
+      imageUrl: `/champions/${fileName}`,
+      label: path.basename(fileName, path.extname(fileName)),
+    }));
+
     return {
       streamers: streamersGallery,
-      champions,
+      champions: champions,
     };
   } catch (error) {
     console.error("Error loading home page data:", error);
@@ -37,7 +51,8 @@ export function meta() {
     { title: "LoL Vods - Find League of Legends VODs" },
     {
       name: "description",
-      content: "Search and find League of Legends VODs by streamer, champion, and matchup",
+      content:
+        "Search and find League of Legends VODs by streamer, champion, and matchup",
     },
   ];
 }

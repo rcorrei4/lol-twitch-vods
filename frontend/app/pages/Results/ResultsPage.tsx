@@ -1,9 +1,9 @@
 import { useRef, useState } from "react";
 import { TbSwords } from "react-icons/tb";
-import type { SearchResultMatch } from "~/services/matches";
+import type { Match } from "~/services/generated";
 
 type ListMatchesPageProps = {
-  matches: SearchResultMatch[];
+  matches: Match[];
   champions?: string[];
   streamers?: string[];
   enemies?: string[];
@@ -15,6 +15,10 @@ export function ListMatchesPage({
   streamers,
   enemies,
 }: ListMatchesPageProps) {
+  if (!matches) {
+    return <h1>No matches found :(</h1>;
+  }
+
   const [selectedVOD, setSelectedVOD] = useState<
     [string | null, string | null] | null
   >(null);
@@ -29,28 +33,28 @@ export function ListMatchesPage({
   const searchedMatchups = matches.map((match) => {
     // Make a better logic maybe?
     if (champions || streamers) {
-      const player = match.participants.find(
+      const player = match.participants?.find(
         (participant) =>
           (champions?.includes(participant.championName) &&
             participant.streamer) ||
           (participant.streamer &&
-            streamers?.includes(participant.streamer?.displayName))
+            streamers?.includes(participant.streamer?.displayName)),
       );
 
       const enemy = match.participants.find(
         (participant) =>
-          participant !== player && participant.position === player?.position
+          participant !== player && participant.position === player?.position,
       );
 
       return { player, enemy, ...match };
     } else {
       const enemy = match.participants.find((participant) =>
-        enemies?.includes(participant.championName)
+        enemies?.includes(participant.championName),
       );
 
       const player = match.participants.find(
         (participant) =>
-          participant !== enemy && participant.position === enemy?.position
+          participant !== enemy && participant.position === enemy?.position,
       );
 
       return { player, enemy, ...match };
@@ -107,7 +111,7 @@ export function ListMatchesPage({
         >
           <div className="justify-around flex items-center gap-2 w-3/4">
             <span className="text-sm text-gray-400">
-              {getTimeDifference(match.gameStartDatetime)} ago
+              {getTimeDifference(match.gameStartDateTime)} ago
             </span>
             <div className="flex items-center gap-2">
               <img

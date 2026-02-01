@@ -1,5 +1,5 @@
-import { listMatches } from "~/services/matches";
 import { ListMatchesPage } from "~/pages/Results/ResultsPage";
+import { getMatches } from "~/services/generated";
 import type { Route } from "./+types/results";
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -8,14 +8,17 @@ export async function loader({ request }: Route.LoaderArgs) {
   const champions = url.searchParams.get("champions")?.split(",");
   const enemyChampions = url.searchParams.get("enemyChampions")?.split(",");
 
-  const results = await listMatches({
-    streamers,
-    champions,
-    enemyChampions,
+  const { data: matches } = await getMatches({
+    query: {
+      streamers,
+      champions,
+      enemyChampions,
+    },
+    throwOnError: true,
   });
 
   return {
-    matches: results,
+    matches,
     streamers,
     champions,
     enemies: enemyChampions,
@@ -25,7 +28,10 @@ export async function loader({ request }: Route.LoaderArgs) {
 export function meta() {
   return [
     { title: "Results - LoL Vods" },
-    { name: "description", content: "Search results for League of Legends VODs" },
+    {
+      name: "description",
+      content: "Search results for League of Legends VODs",
+    },
   ];
 }
 

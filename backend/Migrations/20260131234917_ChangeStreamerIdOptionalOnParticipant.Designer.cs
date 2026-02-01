@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using lol_twitch_vods_api.Data;
@@ -11,9 +12,11 @@ using lol_twitch_vods_api.Data;
 namespace lol_twitch_vods_api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260131234917_ChangeStreamerIdOptionalOnParticipant")]
+    partial class ChangeStreamerIdOptionalOnParticipant
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -140,8 +143,8 @@ namespace lol_twitch_vods_api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("match_id");
 
-                    b.Property<string>("MatchStartVod")
-                        .HasColumnType("text")
+                    b.Property<DateTime?>("MatchStartVod")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("match_start_vod");
 
                     b.Property<int>("Position")

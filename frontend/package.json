@@ -6,11 +6,15 @@
     "build": "react-router build",
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
-    "typecheck": "react-router typegen && tsc"
+    "typecheck": "react-router typegen && tsc",
+    "generate-api-client": "openapi-ts",
+    "download-champions-icons": "bun scripts/download-champions-icons.js"
   },
   "dependencies": {
+    "@hey-api/client-axios": "^0.9.1",
     "@react-router/node": "7.10.1",
     "@react-router/serve": "7.10.1",
+    "@tanstack/react-query": "^5.90.20",
     "axios": "^1.13.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -23,6 +27,7 @@
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
+    "@hey-api/openapi-ts": "^0.90.10",
     "@react-router/dev": "7.10.1",
     "@tailwindcss/vite": "^4.1.13",
     "@types/node": "^22",
