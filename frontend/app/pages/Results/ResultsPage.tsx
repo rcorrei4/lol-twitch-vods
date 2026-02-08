@@ -1,8 +1,18 @@
 import { SwordIcon } from "@phosphor-icons/react/dist/icons/Sword";
+import { VideoIcon } from "@phosphor-icons/react/dist/icons/Video";
 import { useRef, useState } from "react";
 import { useSearchParams } from "react-router";
+import { Accordion } from "~/components/Accordion/Accordion";
 import { Button } from "~/components/Button/Button";
-import type { MatchPaginatedResponse } from "~/services/generated";
+import type { MatchPaginatedResponse, Participant } from "~/services/generated";
+
+const POSITION_ORDER: Record<string, number> = {
+  TOP: 0,
+  JUNGLE: 1,
+  MIDDLE: 2,
+  BOTTOM: 3,
+  UTILITY: 4,
+};
 
 type ListMatchesPageProps = {
   paginatedResponse: MatchPaginatedResponse;
@@ -33,6 +43,7 @@ export function ListMatchesPage({
     matchStartVod: string;
     matchId: string;
   } | null>(null);
+  const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
   const playerRef = useRef<HTMLDivElement | null>(null);
 
   const handleMatchClick = (
@@ -97,6 +108,23 @@ export function ListMatchesPage({
     }
   }
 
+  function getTeams(participants: Participant[]) {
+    const getOrder = (pos: string | number) =>
+      typeof pos === "string" ? (POSITION_ORDER[pos] ?? 99) : pos;
+
+    const blueTeam = participants
+      .filter((p) => p.win)
+      .sort((a, b) => getOrder(a.position) - getOrder(b.position));
+    const redTeam = participants
+      .filter((p) => !p.win)
+      .sort((a, b) => getOrder(a.position) - getOrder(b.position));
+    return { blueTeam, redTeam };
+  }
+
+  function toggleExpanded(matchId: string) {
+    setExpandedMatchId((prev) => (prev === matchId ? null : matchId));
+  }
+
   return (
     <div className="p-5 flex flex-col gap-3">
       <div
@@ -117,63 +145,146 @@ export function ListMatchesPage({
       </div>
 
       {searchedMatchups.map((match) => {
-        const isSelected = selectedMatch?.matchId === match.id.toString();
+        const isExpanded = expandedMatchId === match.id.toString();
+        const { blueTeam, redTeam } = getTeams(match.participants);
+
         return (
-          <button
+          <Accordion
             key={match.id.toString()}
-            className={`${
-              match.player?.win
-                ? "bg-[#303043] border-[#3A374B]"
-                : "bg-[#2E1F24] border-[#443438]"
-            } ${
-              isSelected
-                ? "ring-2 ring-primary ring-offset-2 ring-offset-gray-one"
-                : ""
-            } p-3 justify-around flex items-center border-t rounded transition-all duration-300`}
-            onClick={() => {
-              if (!match.player?.vodId || !match.player?.matchStartVod) return;
-              handleMatchClick(
-                match.id.toString(),
-                match.player.vodId,
-                match.player.matchStartVod,
-              );
-            }}
+            variant={match.player?.win ? "win" : "lose"}
+            expanded={isExpanded}
+            onToggle={() => toggleExpanded(match.id.toString())}
+            trigger={
+              <div className="justify-around flex items-center gap-3">
+                <span className="text-sm text-gray-400">
+                  {getTimeDifference(match.gameStartDateTime)} ago
+                </span>
+                <div className="flex items-center justify-center gap-3">
+                  <span className="font-semibold">
+                    {match.player?.streamer?.displayName}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={`/champions/${match.player?.championName}.png`}
+                      alt={match.player?.championName ?? ""}
+                      width={40}
+                      height={40}
+                      className="transition-transform duration-150"
+                    />
+                    <SwordIcon size={30} className="text-slate-400" />
+                    <img
+                      src={`/champions/${match.enemy?.championName}.png`}
+                      alt={match.enemy?.championName ?? ""}
+                      width={40}
+                      height={40}
+                      className="transition-transform duration-150"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 text-center text-slate-300">
+                  <div className="min-w-3.5">{match.player?.kills}</div>
+                  <span className="text-gray-five">/</span>
+                  <div className="min-w-3.5 text-red-400">
+                    {match.player?.deaths}
+                  </div>
+                  <span className="text-gray-five">/</span>
+                  <div className="min-w-3.5">{match.player?.assists}</div>
+                </div>
+              </div>
+            }
           >
-            <div className="justify-around flex items-center gap-2 w-3/4">
-              <span className="text-sm text-gray-400">
-                {getTimeDifference(match.gameStartDateTime)} ago
-              </span>
-              <div className="flex items-center gap-2">
-                <img
-                  src={`/champions/${match.player?.championName}.png`}
-                  alt={match.player?.championName ?? ""}
-                  width={40}
-                  height={40}
-                  className="transition-transform duration-150"
-                />
-                <SwordIcon size={30} className="text-slate-400" />
-                <img
-                  src={`/champions/${match.enemy?.championName}.png`}
-                  alt={match.enemy?.championName ?? ""}
-                  width={40}
-                  height={40}
-                  className="transition-transform duration-150"
-                />
+            <div className="p-3 pt-0 flex gap-4">
+              <div className="flex-1">
+                <div className="text-xs text-blue-400 font-semibold mb-2">
+                  Blue Team
+                </div>
+                <div className="flex flex-col gap-1">
+                  {blueTeam.map((participant) => (
+                    <div
+                      key={participant.id}
+                      className="flex items-center gap-2 text-sm"
+                    >
+                      <img
+                        src={`/champions/${participant.championName}.png`}
+                        alt={participant.championName}
+                        width={28}
+                        height={28}
+                        className="rounded"
+                      />
+                      <span className="text-gray-300 w-20 truncate">
+                        {participant.championName}
+                      </span>
+                      <span className="text-gray-400 text-xs">
+                        {participant.kills}/{participant.deaths}/
+                        {participant.assists}
+                      </span>
+                      {participant.vodId && participant.matchStartVod && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMatchClick(
+                              match.id.toString(),
+                              participant.vodId!,
+                              participant.matchStartVod!,
+                            );
+                          }}
+                          className="ml-auto p-1 rounded hover:bg-white/10 transition-colors"
+                          title={`Watch ${participant.streamer?.displayName}'s POV`}
+                        >
+                          <VideoIcon size={18} className="text-primary" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-              <span className="font-semibold">
-                {match.player?.streamer?.displayName}
-              </span>
-            </div>
-            <div className="flex gap-2 text-center text-slate-300 ml-auto">
-              <div className="min-w-3.5">{match.player?.kills}</div>
-              <span className="text-gray-five">/</span>
-              <div className="min-w-3.5 text-red-400">
-                {match.player?.deaths}
+
+              <div className="flex-1">
+                <div className="text-xs text-red-400 font-semibold mb-2">
+                  Red Team
+                </div>
+                <div className="flex flex-col gap-1">
+                  {redTeam.map((participant) => (
+                    <div
+                      key={participant.id}
+                      className="flex items-center gap-2 text-sm"
+                    >
+                      <img
+                        src={`/champions/${participant.championName}.png`}
+                        alt={participant.championName}
+                        width={28}
+                        height={28}
+                        className="rounded"
+                      />
+                      <span className="text-gray-300 w-20 truncate">
+                        {participant.championName}
+                      </span>
+                      <span className="text-gray-400 text-xs">
+                        {participant.kills}/{participant.deaths}/
+                        {participant.assists}
+                      </span>
+                      {participant.vodId && participant.matchStartVod && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMatchClick(
+                              match.id.toString(),
+                              participant.vodId!,
+                              participant.matchStartVod!,
+                            );
+                          }}
+                          className="ml-auto p-1 rounded hover:bg-white/10 transition-colors"
+                          title={`Watch ${participant.streamer?.displayName}'s POV`}
+                        >
+                          <VideoIcon size={18} className="text-primary" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-              <span className="text-gray-five">/</span>
-              <div className="min-w-3.5">{match.player?.assists}</div>
             </div>
-          </button>
+          </Accordion>
         );
       })}
 
