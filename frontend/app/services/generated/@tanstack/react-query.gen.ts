@@ -11,17 +11,17 @@ import type { AxiosError } from "axios";
 
 import { client } from "../client.gen";
 import {
-  getApiStreamer,
+  getApiStreamers,
   getMatches,
   getRiotGamesAccount,
   getTwitchStreamer,
   type Options,
-  putApiStreamer,
+  putApiStreamers,
 } from "../sdk.gen";
 import type {
-  GetApiStreamerData,
-  GetApiStreamerError,
-  GetApiStreamerResponse,
+  GetApiStreamersData,
+  GetApiStreamersError,
+  GetApiStreamersResponse,
   GetMatchesData,
   GetMatchesResponse,
   GetRiotGamesAccountData,
@@ -30,8 +30,8 @@ import type {
   GetTwitchStreamerData,
   GetTwitchStreamerError,
   GetTwitchStreamerResponse,
-  PutApiStreamerData,
-  PutApiStreamerResponse,
+  PutApiStreamersData,
+  PutApiStreamersResponse,
 } from "../types.gen";
 
 export type QueryKey<TOptions extends Options> = [
@@ -200,18 +200,21 @@ export const getRiotGamesAccountOptions = (
     queryKey: getRiotGamesAccountQueryKey(options),
   });
 
-export const getApiStreamerQueryKey = (options?: Options<GetApiStreamerData>) =>
-  createQueryKey("getApiStreamer", options);
+export const getApiStreamersQueryKey = (
+  options?: Options<GetApiStreamersData>,
+) => createQueryKey("getApiStreamers", options);
 
-export const getApiStreamerOptions = (options?: Options<GetApiStreamerData>) =>
+export const getApiStreamersOptions = (
+  options?: Options<GetApiStreamersData>,
+) =>
   queryOptions<
-    GetApiStreamerResponse,
-    AxiosError<GetApiStreamerError>,
-    GetApiStreamerResponse,
-    ReturnType<typeof getApiStreamerQueryKey>
+    GetApiStreamersResponse,
+    AxiosError<GetApiStreamersError>,
+    GetApiStreamersResponse,
+    ReturnType<typeof getApiStreamersQueryKey>
   >({
     queryFn: async ({ queryKey, signal }) => {
-      const { data } = await getApiStreamer({
+      const { data } = await getApiStreamers({
         ...options,
         ...queryKey[0],
         signal,
@@ -219,23 +222,23 @@ export const getApiStreamerOptions = (options?: Options<GetApiStreamerData>) =>
       });
       return data;
     },
-    queryKey: getApiStreamerQueryKey(options),
+    queryKey: getApiStreamersQueryKey(options),
   });
 
-export const putApiStreamerMutation = (
-  options?: Partial<Options<PutApiStreamerData>>,
+export const putApiStreamersMutation = (
+  options?: Partial<Options<PutApiStreamersData>>,
 ): UseMutationOptions<
-  PutApiStreamerResponse,
+  PutApiStreamersResponse,
   AxiosError<DefaultError>,
-  Options<PutApiStreamerData>
+  Options<PutApiStreamersData>
 > => {
   const mutationOptions: UseMutationOptions<
-    PutApiStreamerResponse,
+    PutApiStreamersResponse,
     AxiosError<DefaultError>,
-    Options<PutApiStreamerData>
+    Options<PutApiStreamersData>
   > = {
     mutationFn: async (fnOptions) => {
-      const { data } = await putApiStreamer({
+      const { data } = await putApiStreamers({
         ...options,
         ...fnOptions,
         throwOnError: true,

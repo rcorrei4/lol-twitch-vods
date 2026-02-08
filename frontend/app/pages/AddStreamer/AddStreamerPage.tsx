@@ -1,12 +1,12 @@
+import { useMutation } from "@tanstack/react-query";
 import { useFieldArray, useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
-import { useMutation } from "@tanstack/react-query";
 import { Button } from "~/components/Button/Button";
 import { TextBox } from "~/components/TextBox/TextBox";
 import {
   getRiotGamesAccount,
   getTwitchStreamer,
-  putApiStreamer,
+  putApiStreamers,
   type CreateStreamer,
   type StreamerLolAccount,
 } from "~/services/generated";
@@ -43,7 +43,13 @@ function StepIndicator({ activeStep }: { activeStep: 1 | 2 }) {
   );
 }
 
-function ErrorMessage({ message, className }: { message?: string; className?: string }) {
+function ErrorMessage({
+  message,
+  className,
+}: {
+  message?: string;
+  className?: string;
+}) {
   return (
     <div
       className={`overflow-hidden transition-all duration-500 ease-in-out ${
@@ -170,7 +176,7 @@ export function AddStreamerPage() {
 
   const submitMutation = useMutation({
     mutationFn: async (data: AddStreamerForm) => {
-      await putApiStreamer({
+      await putApiStreamers({
         body: {
           twitchId: data.streamer.twitchId,
           displayName: data.streamer.displayName,
@@ -198,7 +204,8 @@ export function AddStreamerPage() {
     setValue("streamer.login", undefined as unknown as string);
   }
 
-  const canSubmit = stepTwo && lolAccounts.fields.length > 0 && !submitMutation.isPending;
+  const canSubmit =
+    stepTwo && lolAccounts.fields.length > 0 && !submitMutation.isPending;
 
   return (
     <div className="p-3 flex flex-col justify-center gap-5 max-w-125">
@@ -259,7 +266,10 @@ export function AddStreamerPage() {
                 </option>
               ))}
             </select>
-            <ErrorMessage message={errors.lolAccounts?.message} className="col-span-full" />
+            <ErrorMessage
+              message={errors.lolAccounts?.message}
+              className="col-span-full"
+            />
             <Button
               className="h-10 col-span-full"
               accentColor="secondary"

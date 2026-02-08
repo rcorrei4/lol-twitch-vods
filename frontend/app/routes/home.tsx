@@ -1,12 +1,12 @@
 import fs from "fs";
 import path from "path";
 import { HomePage } from "~/pages/Home/HomePage";
-import { getApiStreamer } from "~/services/generated";
+import { getApiStreamers } from "~/services/generated";
 import type { Route } from "./+types/home";
 
 export async function loader() {
   try {
-    const { data: streamers } = await getApiStreamer();
+    const { data: streamers } = await getApiStreamers();
 
     if (!streamers) {
       throw Error("No streamers found!");

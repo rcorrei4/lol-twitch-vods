@@ -21,6 +21,7 @@ export type GetLolAccountResponse = {
 export type Match = {
   id: string;
   createdAt: string;
+  puuid: string;
   gameStartDateTime: string;
   gameEndDateTime: string;
   participants: Array<Participant>;
@@ -124,7 +125,7 @@ export type GetMatchesData = {
     page?: number;
     pageSize?: number;
   };
-  url: "/api/match";
+  url: "/api/matches";
 };
 
 export type GetMatchesResponses = {
@@ -167,49 +168,49 @@ export type GetRiotGamesAccountResponses = {
 export type GetRiotGamesAccountResponse =
   GetRiotGamesAccountResponses[keyof GetRiotGamesAccountResponses];
 
-export type GetApiStreamerData = {
+export type GetApiStreamersData = {
   body?: never;
   path?: never;
   query?: never;
-  url: "/api/streamer";
+  url: "/api/streamers";
 };
 
-export type GetApiStreamerErrors = {
+export type GetApiStreamersErrors = {
   /**
    * Not Found
    */
   404: NotFoundError;
 };
 
-export type GetApiStreamerError =
-  GetApiStreamerErrors[keyof GetApiStreamerErrors];
+export type GetApiStreamersError =
+  GetApiStreamersErrors[keyof GetApiStreamersErrors];
 
-export type GetApiStreamerResponses = {
+export type GetApiStreamersResponses = {
   /**
    * OK
    */
   200: Array<Streamer>;
 };
 
-export type GetApiStreamerResponse =
-  GetApiStreamerResponses[keyof GetApiStreamerResponses];
+export type GetApiStreamersResponse =
+  GetApiStreamersResponses[keyof GetApiStreamersResponses];
 
-export type PutApiStreamerData = {
+export type PutApiStreamersData = {
   body: CreateStreamer;
   path?: never;
   query?: never;
-  url: "/api/streamer";
+  url: "/api/streamers";
 };
 
-export type PutApiStreamerResponses = {
+export type PutApiStreamersResponses = {
   /**
    * OK
    */
   200: Streamer;
 };
 
-export type PutApiStreamerResponse =
-  PutApiStreamerResponses[keyof PutApiStreamerResponses];
+export type PutApiStreamersResponse =
+  PutApiStreamersResponses[keyof PutApiStreamersResponses];
 
 export type GetTwitchStreamerData = {
   body?: never;

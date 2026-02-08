@@ -3,9 +3,9 @@
 import type { Client, Options as Options2, TDataShape } from "./client";
 import { client } from "./client.gen";
 import type {
-  GetApiStreamerData,
-  GetApiStreamerErrors,
-  GetApiStreamerResponses,
+  GetApiStreamersData,
+  GetApiStreamersErrors,
+  GetApiStreamersResponses,
   GetMatchesData,
   GetMatchesResponses,
   GetRiotGamesAccountData,
@@ -14,8 +14,8 @@ import type {
   GetTwitchStreamerData,
   GetTwitchStreamerErrors,
   GetTwitchStreamerResponses,
-  PutApiStreamerData,
-  PutApiStreamerResponses,
+  PutApiStreamersData,
+  PutApiStreamersResponses,
 } from "./types.gen";
 
 export type Options<
@@ -40,7 +40,7 @@ export const getMatches = <ThrowOnError extends boolean = false>(
 ) =>
   (options?.client ?? client).get<GetMatchesResponses, unknown, ThrowOnError>({
     responseType: "json",
-    url: "/api/match",
+    url: "/api/matches",
     ...options,
   });
 
@@ -57,29 +57,29 @@ export const getRiotGamesAccount = <ThrowOnError extends boolean = false>(
     ...options,
   });
 
-export const getApiStreamer = <ThrowOnError extends boolean = false>(
-  options?: Options<GetApiStreamerData, ThrowOnError>,
+export const getApiStreamers = <ThrowOnError extends boolean = false>(
+  options?: Options<GetApiStreamersData, ThrowOnError>,
 ) =>
   (options?.client ?? client).get<
-    GetApiStreamerResponses,
-    GetApiStreamerErrors,
+    GetApiStreamersResponses,
+    GetApiStreamersErrors,
     ThrowOnError
   >({
     responseType: "json",
-    url: "/api/streamer",
+    url: "/api/streamers",
     ...options,
   });
 
-export const putApiStreamer = <ThrowOnError extends boolean = false>(
-  options: Options<PutApiStreamerData, ThrowOnError>,
+export const putApiStreamers = <ThrowOnError extends boolean = false>(
+  options: Options<PutApiStreamersData, ThrowOnError>,
 ) =>
   (options.client ?? client).put<
-    PutApiStreamerResponses,
+    PutApiStreamersResponses,
     unknown,
     ThrowOnError
   >({
     responseType: "json",
-    url: "/api/streamer",
+    url: "/api/streamers",
     ...options,
     headers: {
       "Content-Type": "application/json",

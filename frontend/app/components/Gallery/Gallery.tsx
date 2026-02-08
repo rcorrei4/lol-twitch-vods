@@ -1,5 +1,5 @@
+import { XIcon } from "@phosphor-icons/react/dist/icons/X";
 import { useEffect, useState } from "react";
-import { VscClearAll } from "react-icons/vsc";
 import { useSearchParams } from "react-router";
 import { Button } from "~/components/Button/Button";
 import { TextBox } from "../TextBox/TextBox";
@@ -81,7 +81,7 @@ export default function Gallery({
           onClick={() => setSelectedElements([])}
         >
           Clear
-          <VscClearAll size={20} />
+          <XIcon size={20} />
         </Button>
       </div>
       <div className="flex flex-wrap justify-center">

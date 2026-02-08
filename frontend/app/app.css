@@ -1,18 +1,19 @@
-@import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 
   /* Custom colors from original project */
-  --color-primary: #6F2DBD;
-  --color-secondary: #282C33;
-  --color-gray-one: #0F1216;
-  --color-gray-two: #181C23;
-  --color-gray-three: #282C33;
-  --color-gray-four: #383C44;
-  --color-gray-five: #5E605F;
+  --color-primary: #6f2dbd;
+  --color-secondary: #282c33;
+  --color-gray-one: #0f1216;
+  --color-gray-two: #181c23;
+  --color-gray-three: #282c33;
+  --color-gray-four: #383c44;
+  --color-gray-five: #5e605f;
   --color-gray-six: #828282;
 }
 
