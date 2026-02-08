@@ -11,7 +11,7 @@ public static class MatchEndpoints
 {
     public static void MapMatchEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/match")
+        var group = app.MapGroup("/api/matches")
               .WithTags("Match");
 
         group.MapGet("/", async Task<Ok<PaginatedResponse<Match>>> (

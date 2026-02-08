@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Net.Http.Headers;
+using System.Text.Json;
 using lol_twitch_vods_api.Configuration;
 using Microsoft.Extensions.Options;
 namespace lol_twitch_vods_api.Services;
@@ -67,7 +68,7 @@ public class GetStreamervideoResponsePagination
 
 public class GetStreamerVideosReponse
 {
-    public GetStreamerVideosResponseData[] data { get; set; } = [];
+    public ICollection<GetStreamerVideosResponseData> data { get; set; } = [];
     public GetStreamervideoResponsePagination? pagination { get; set; } = null;
 }
 
@@ -132,23 +133,50 @@ public class TwitchService(
         return null;
     }
 
-    public async Task<GetStreamerVideosReponse?> ListStreamerVods(string streamerId)
+    public async Task<List<GetStreamerVideosResponseData>?> ListStreamerVods(string streamerId)
     {
         if (_token == "")
         {
             await SetClientToken();
         }
 
-        var url = $"https://api.twitch.tv/helix/videos?user_id={streamerId}";
         _logger.LogDebug("Fetching VODs for streamer: {StreamerId}", streamerId);
 
-        var response = await _client.GetFromJsonAsync<GetStreamerVideosReponse>(url);
+        List<GetStreamerVideosResponseData> videos = [];
+        var cursor = "";
+        int page = 1;
 
-        if (response?.data != null && response.data.Length > 0)
+        while (true)
         {
-            _logger.LogDebug("Found {Count} VODs for streamer {StreamerId}", response.data.Length, streamerId);
-            return response;
+            var url = $"https://api.twitch.tv/helix/videos?user_id={streamerId}";
+
+            if (cursor != null)
+            {
+                url += $"&after={cursor}";
+            }
+
+            var response = await _client.GetFromJsonAsync<GetStreamerVideosReponse>(url);
+            if (response?.data != null && response.data.Count > 0)
+            {
+                _logger.LogDebug("Found {Count} VODs for streamer {StreamerId} - Page {Page}", response.data.Count, page, streamerId);
+
+                if (response?.pagination != null)
+                {
+                    cursor = response.pagination.cursor;
+                    videos.AddRange(response.data);
+                    page++;
+                }
+            } else
+            {
+                break;
+            }
         }
+
+        if (videos != null)
+        {
+            return videos;
+        }
+        
 
         _logger.LogWarning("No VODs found for streamer {StreamerId}", streamerId);
         return null;

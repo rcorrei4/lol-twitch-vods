@@ -31,7 +31,7 @@ public static class StreamerEndpoints
 {
     public static void MapStreamerEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/streamer").WithTags("Streamer");
+        var group = app.MapGroup("/api/streamers").WithTags("Streamer");
 
         group.MapGet("/", async Task<Results<Ok<List<Streamer>>, NotFound<NotFoundError>>> (
             AppDbContext context,
@@ -123,13 +123,13 @@ public static class StreamerEndpoints
 
             var streamerVideos = await twitchService.ListStreamerVods(streamer.TwitchId);
 
-            if (streamerVideos?.data == null || streamerVideos.data.Length == 0)
+            if (streamerVideos == null || streamerVideos.Count == 0)
             {
                 logger.LogWarning("No VODs found for streamer {TwitchId}", streamer.TwitchId);
                 return TypedResults.Ok(streamer);
             }
 
-            var lastVod = streamerVideos.data.LastOrDefault();
+            var lastVod = streamerVideos.LastOrDefault();
             if (lastVod == null)
             {
                 logger.LogWarning("No last VOD available for streamer {TwitchId}", streamer.TwitchId);
@@ -149,7 +149,7 @@ public static class StreamerEndpoints
             var newMatchCount = 0;
             var updatedMatchCount = 0;
 
-            foreach (LolAccount lolAccount in streamer.LolAccounts)
+            foreach (LolAccount lolAccount in streamer.LolAccounts.Take(1))
             {
                 logger.LogDebug("Fetching matches for: {Puuid}", lolAccount.Puuid);
                 var accountMatches = await riotGamesService.ListAccountMatches(lolAccount.Puuid, lolAccount.Server, lastVodEndTimestamp);
@@ -170,6 +170,12 @@ public static class StreamerEndpoints
                         .Include(m => m.Participants)
                         .FirstOrDefaultAsync(m => m.Puuid == accountMatchId);
 
+                    if (existingMatch != null && existingMatch.Participants.Any(p => p.Puuid == lolAccount.Puuid && p.VodId != null))
+                    {
+                        logger.LogDebug("Match {account} already has VOD info for account {accountUsername}#{accountTag}, skipping", accountMatchId, lolAccount.Username, lolAccount.Tag);
+                        continue;
+                    }
+
                     var lolMatch = await riotGamesService.GetLolMatch(accountMatchId, lolAccount.Server);
 
                     if (lolMatch == null)
@@ -187,7 +193,7 @@ public static class StreamerEndpoints
                         continue;
                     }
 
-                    foreach (GetStreamerVideosResponseData vod in streamerVideos.data)
+                    foreach (GetStreamerVideosResponseData vod in streamerVideos)
                     {
                         var vodStart = DateTime.Parse(vod.created_at).ToUniversalTime();
                         var vodEnd = Vod.GetVodEndDateTime(vodStart, vod.duration);
@@ -241,7 +247,7 @@ public static class StreamerEndpoints
                                     Puuid = accountMatchId,
                                     GameEndDateTime = matchEnd,
                                     GameStartDateTime = matchStart,
-                                    Participants = lolMatch.info.participants.Select(p => new Participant
+                                    Participants = [.. lolMatch.info.participants.Select(p => new Participant
                                     {
                                         Puuid = p.puuid,
                                         ChampionName = p.championName,
@@ -253,7 +259,7 @@ public static class StreamerEndpoints
                                         VodId = p.puuid == streamerParticipant.puuid ? long.Parse(vod.id) : null,
                                         MatchStartVod = p.puuid == streamerParticipant.puuid ? matchStartVod : null,
                                         StreamerId = p.puuid == streamerParticipant.puuid ? streamer.Id : null,
-                                    }).ToList()
+                                    })]
                                 };
 
                                 matchesToAdd.Add(newMatch);
