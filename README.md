@@ -71,6 +71,30 @@ TwitchApi:ClientSecret=<your_twitch_client_secret>
 RiotGamesApi:Key=<your_riot_games_api_key>
 ```
 
+## Getting API Credentials
+
+### Riot Games API
+
+1. Go to the [Riot Developer Portal](https://developer.riotgames.com/)
+2. Sign in with your Riot account
+3. Your development API key is available on the dashboard (expires every 24 hours)
+4. For a persistent key, register a product under **Register Product** (requires approval)
+
+Documentation: https://developer.riotgames.com/docs/portal
+
+### Twitch API
+
+1. Go to the [Twitch Developer Console](https://dev.twitch.tv/console)
+2. Sign in with your Twitch account
+3. Click **Register Your Application**
+4. Fill in the details:
+   - Name: Your app name
+   - OAuth Redirect URLs: `http://localhost` (for development)
+   - Category: Choose appropriate category
+5. Click **Create** and then **Manage** to view your Client ID and generate a Client Secret
+
+Documentation: https://dev.twitch.tv/docs/api/get-started
+
 ## Tech Stack
 
 **Frontend:**
