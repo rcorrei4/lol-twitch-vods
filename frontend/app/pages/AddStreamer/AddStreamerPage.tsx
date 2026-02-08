@@ -239,33 +239,35 @@ export function AddStreamerPage() {
         <StepIndicator activeStep={stepTwo ? 2 : 1} />
 
         <div className="border border-gray-two p-5 rounded">
-          <div className="grid grid-cols-5 gap-3">
-            <TextBox
-              className="col-span-3"
-              placeholder="LOL Username"
-              disabled={!stepTwo}
-              maxLength={16}
-              {...register("lolUsername")}
-            />
-            <TextBox
-              className="col-span-1"
-              placeholder="TAG"
-              disabled={!stepTwo}
-              maxLength={5}
-              {...register("lolTag")}
-            />
-            <select
-              id="server"
-              className="col-span-1 h-10 text-[14px] placeholder-gray-six outline-none bg-gray-two px-3 py-1 rounded-[5px] border border-gray-three border-opacity-5 focus:ring-1 focus:ring-gray-three focus:ring-offset-1 focus:ring-offset-gray-two transition-all duration-400 ease-in-out disabled:opacity-30"
-              disabled={!stepTwo}
-              {...register("lolServer")}
-            >
-              {Object.values(Server).map((server) => (
-                <option key={server} value={server}>
-                  {server.toUpperCase()}
-                </option>
-              ))}
-            </select>
+          <div className="grid gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+              <TextBox
+                className="col-span-3"
+                placeholder="LOL Username"
+                disabled={!stepTwo}
+                maxLength={16}
+                {...register("lolUsername")}
+              />
+              <TextBox
+                className="col-span-1"
+                placeholder="TAG"
+                disabled={!stepTwo}
+                maxLength={5}
+                {...register("lolTag")}
+              />
+              <select
+                id="server"
+                className="col-span-2 md:col-span-1 h-10 text-[14px] placeholder-gray-six outline-none bg-gray-two px-3 py-1 rounded-[5px] border border-gray-three border-opacity-5 focus:ring-1 focus:ring-gray-three focus:ring-offset-1 focus:ring-offset-gray-two transition-all duration-400 ease-in-out disabled:opacity-30"
+                disabled={!stepTwo}
+                {...register("lolServer")}
+              >
+                {Object.values(Server).map((server) => (
+                  <option key={server} value={server}>
+                    {server.toUpperCase()}
+                  </option>
+                ))}
+              </select>
+            </div>
             <ErrorMessage
               message={errors.lolAccounts?.message}
               className="col-span-full"
