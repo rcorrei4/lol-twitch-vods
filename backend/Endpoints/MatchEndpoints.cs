@@ -51,8 +51,7 @@ public static class MatchEndpoints
             if (enemyChampions != null && enemyChampions.Length > 0)
             {
                 logger.LogDebug("Filtering by enemy champions: {EnemyChampions}", JsonSerializer.Serialize(enemyChampions));
-                query = query.Where(m => m.Participants.Any(p =>
-                    p.Streamer == null && enemyChampions.Contains(p.ChampionName)));
+                query = query.Where(m => m.Participants.Any(p => enemyChampions.Contains(p.ChampionName) && m.Participants.Any(s => s.Position == p.Position && s.Streamer != null && s.Puuid != p.Puuid)));
             }
 
             var totalCount = await query.CountAsync();
