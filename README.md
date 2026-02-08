@@ -2,6 +2,8 @@
 
 A web application for browsing League of Legends streamers and their match VODs with synchronized Twitch video playback.
 
+![Project Demo](cool.gif)
+
 ## Project Structure
 
 ```
